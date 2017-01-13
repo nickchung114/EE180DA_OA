@@ -6,6 +6,24 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
+#include <mraa/i2c.h>
+#include "LSM9DS0.h"
+#include <math.h>
+
+#define ACCEL_X_OFFSET	0 //0.075707
+#define ACCEL_X_SCALE	1
+#define ACCEL_Y_OFFSET	0
+#define ACCEL_Y_SCALE	1
+#define ACCEL_Z_OFFSET	1 
+#define ACCEL_Z_SCALE	1//0.997808
+
+#define NUM_NOTES	5
+
+
+float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
+	*curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
+	return *curr_avg;
+}
 
 void error(const char *msg)
 {
@@ -71,8 +89,8 @@ int main(int argc, char *argv[])
 	// send user input to the server
 	n = write(client_socket_fd,buffer,strlen(buffer));
 	*/
-	int i = 13;
-	n = write(client_socket_fd,&i,2);
+	uint16 id = 0x00;
+	n = write(client_socket_fd,&id,2);
 	
 	// n contains how many bytes were received by the server
 	// if n is less than 0, then there was an error
@@ -85,15 +103,19 @@ int main(int argc, char *argv[])
 
 	//sleep(1);
 
-	// get the response from the server and print it to the user
+	//Wait for server pings.
+	int continue = 1;
+	while(continue)
+	{
 	n = read(client_socket_fd, buffer, 255);
 	if (n < 0) {
 		error("ERROR reading from socket");
 	}
-	printf("%s\n",buffer);
+	//code for classification.
 
 	// clean up the file descriptors
 	close(client_socket_fd);
+	}
 	
 	return 0;
 }
