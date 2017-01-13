@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -33,6 +34,24 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
+	//set up 9DOF
+	data_t accel_data, gyro_data, mag_data;
+	data_t gyro_offset;
+	int16_t temperature;
+	float a_res, g_res, m_res;
+	float norm; 
+	mraa_i2c_context accel, gyro, mag;
+	accel_scale_t a_scale = A_SCALE_4G;
+	gyro_scale_t g_scale = G_SCALE_245DPS;
+	mag_scale_t m_scale = M_SCALE_2GS;
+	//Read the sensor data and print them.
+	float x_angle;
+	//float run_xyz_avg[3]={0,0,0};
+	//int counter=1;
+	float cali_xyz[3]={0,0,0};
+	int classify = 0, j;
+	
+	//Set up server connection
 	int client_socket_fd, portno, n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
@@ -111,11 +130,30 @@ int main(int argc, char *argv[])
 	if (n < 0) {
 		error("ERROR reading from socket");
 	}
+		
 	//code for classification.
+	accel_data = read_accel(accel, a_res);
+		
+		cali_xyz[0] = accel_data.x;
+		//cali_xyz[1] = accel_data.y;
+		cali_xyz[2] = accel_data.z;
 
+		x_angle = cali_xyz[0]*90;
+		if(cali_xyz[2] < 0)
+			x_angle = 180-x_angle;
+		if(x_angle < -90 || x_angle > 270)
+			x_angle = 360-x_angle;
+		
+		for(j = 1; j <= NUM_NOTES; j++) {
+			if(x_angle < -90 + j*180/NUM_NOTES) {
+				classify = j;
+				break;
+			}
+		}
+		printf("Stationary XZ Angle: %f\t\t Class: %d\n",x_angle, classify);  //NEED TO SEND THIS TO SERVER INSTEAD OF PRINTING.
+	
+	}
 	// clean up the file descriptors
 	close(client_socket_fd);
-	}
-	
 	return 0;
 }
