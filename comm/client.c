@@ -150,8 +150,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		printf("Stationary XZ Angle: %f\t\t Class: %d\n",x_angle, classify);  //NEED TO SEND THIS TO SERVER INSTEAD OF PRINTING.
-	
+		dprintf(client_socket_fd,"Stationary XZ Angle: %f\t\t Class: %d\n",x_angle, classify);
 	}
 	// clean up the file descriptors
 	close(client_socket_fd);
