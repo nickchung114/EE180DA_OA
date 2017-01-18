@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	// send user input to the server
 	n = write(client_socket_fd,buffer,strlen(buffer));
 	*/
-	uint16 id = 0x00;
+	uint16_t id = 0x00;
 	n = write(client_socket_fd,&id,2);
 	
 	// n contains how many bytes were received by the server
@@ -123,8 +123,8 @@ int main(int argc, char *argv[])
 	//sleep(1);
 
 	//Wait for server pings.
-	int continue = 1;
-	while(continue)
+	//int continue = 1;
+	while(1)
 	{
 	n = read(client_socket_fd, buffer, 255);
 	if (n < 0) {
