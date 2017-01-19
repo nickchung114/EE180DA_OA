@@ -129,14 +129,14 @@ int main(int argc, char *argv[])
 		if(energy > 3 && stompLastPlayed == 0)
 		{
 			stomp = 1;
-			stompLastPlayed = 5;
+			stompLastPlayed = 20;
 		}
 		dprintf(client_socket_fd,"%f, %f, %f, %f, %f, %f, %f\n",stomp, accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z);
 		if(stompLastPlayed > 0)
 		{
 			stompLastPlayed -= 1;
 		}
-		sleep(0.05);
+		sleep(1/256);
 	}
 	// clean up the file descriptors
 	close(client_socket_fd);
