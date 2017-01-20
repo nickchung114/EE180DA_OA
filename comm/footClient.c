@@ -48,6 +48,10 @@ int main(int argc, char *argv[])
 	float cali_xyz[3]={0,0,0};
 	int classify = 0, j;
 	
+	accel = accel_init();
+	set_accel_scale(accel, a_scale);	
+	a_res = calc_accel_res(a_scale);
+	
 	//Set up server connection
 	int client_socket_fd, portno, n;
 	struct sockaddr_in serv_addr;
@@ -125,7 +129,7 @@ int main(int argc, char *argv[])
 		accel_data = read_accel(accel, a_res);
 		gyro_data = read_gyro(gyro, g_res); //How do you use gyro_offset?
 		
-		energy = sqrt(accel_data.x*accel_data.x + accel_data.y*accel_data.y + accel_data.z*accel_data.z);
+		float energy = sqrt(accel_data.x*accel_data.x + accel_data.y*accel_data.y + accel_data.z*accel_data.z);
 		if(energy > 3 && stompLastPlayed == 0)
 		{
 			stomp = 1;

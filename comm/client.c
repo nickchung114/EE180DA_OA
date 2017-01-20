@@ -51,6 +51,10 @@ int main(int argc, char *argv[])
 	float cali_xyz[3]={0,0,0};
 	int classify = 0, j;
 	
+	accel = accel_init();
+	set_accel_scale(accel, a_scale);	
+	a_res = calc_accel_res(a_scale);
+	
 	//Set up server connection
 	int client_socket_fd, portno, n;
 	struct sockaddr_in serv_addr;
