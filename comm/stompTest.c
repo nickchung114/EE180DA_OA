@@ -59,9 +59,9 @@ int main(int argc, char *argv[])
 	printf("Ready.\n");
 	int stomp = 0;
 	int stompLastPlayed = 0;
-	float energy[10];
+	float energy[50];
 	int i = 0;
-	for(i = 9; i >= 0; i--)
+	for(i = 49; i >= 0; i--)
 	{
 			energy[i] = 0;
 	}
@@ -71,26 +71,27 @@ int main(int argc, char *argv[])
 		//Read sensor data
 		accel_data = read_accel(accel, a_res);
 		gyro_data = read_gyro(gyro, g_res); //How do you use gyro_offset?
-		int hasDip = 0;
-		for(i = 9; i > 0; i--)
+		int min = 1;
+		for(i = 49; i > 0; i--)
 		{
+		min = 1;
 			energy[i] = energy[i-1];
-			if(energy[i] < 0.55)
-				hasDip = 1;
+			if(energy[i] < min)
+				min = energy[i];
 		}
 		energy[0] = sqrt(accel_data.x*accel_data.x + accel_data.y*accel_data.y + accel_data.z*accel_data.z);
-		if(energy[0] >2 && hasDip && stompLastPlayed == 0)
+		if(energy[0] - min > 3.2 && stompLastPlayed == 0)
 		{
 			stomp = 1;
 			printf("Stomp with energy %f\n",energy[0]);
-			stompLastPlayed = 20;
+			stompLastPlayed = 25;
 		}
 		fprintf(fp, "%f, %f, %f, %f, %f, %f, %f\n",energy[0], accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z);
 		if(stompLastPlayed > 0)
 		{
 			stompLastPlayed -= 1;
 		}
-		usleep(20000);
+		usleep(1000000/256);
 		
 	}
 	// clean up the file descriptors
