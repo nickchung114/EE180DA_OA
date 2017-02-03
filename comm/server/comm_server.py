@@ -99,8 +99,8 @@ while counter < EXPECTED_USERS*2:
 	print 'Starting listen'
 	c, addr = s.accept()	# Establish connection with client
 	print 'Connected to ', addr	# WEEDLE
-	data = int(c.recv(1))	# Receive id from client (e.g. 0x1F)
-	print 'Connected with ID ', data	#WEEDLE
+	data = bytearray(c.recv(2))[0]	# Receive id from client (e.g. 0x1F)
+	print 'Connected with type/ID ', data	#WEEDLE
 
 	client_type = data >> 8;	# 1 -> foot; 0 -> hand
 	client_ID = data & 0x0F;
