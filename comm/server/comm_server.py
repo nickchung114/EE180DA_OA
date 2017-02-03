@@ -18,13 +18,15 @@ import socket		# Import socket module
 import sys
 import threading
 import collections	# for Counter()
+import csv
+import os
 
 ######################################
 ### CONSTANT VARIABLE DECLARATIONS ###
 ######################################
 
 HOST = socket.gethostname()	# Get local machine name
-PORT = 8000			# Reserve a port for your service
+PORT = 5000			# Reserve a port for your service
 EXPECTED_USERS = 1		# Number of users
 
 #####################################
@@ -64,15 +66,25 @@ def hand_main(my_id, instrument):
 # 	spawn a thread (Thread 3) for corresponding hand client
 def foot_main(my_id):
 	print 'Starting foot_main with client ID ', my_id	# WEEDLE
+	currentFile = 0; 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
-		data = fIDtoSocket[my_id].recv(4096)
+		data = fIDtoSocket[my_id].recv(7)
 		print 'I received stuff!'	# WEEDLE
 		
-		# FIGURE OUT HOW TO GET THE SEVEN INTS OUT FROM DATA
+		# FIGURE OUT HOW TO GET THE SIX INTS OUT FROM DATA
+		# ax is a string 
+		# data = strcat(ax,',',ay,',',az,',',gx,',',gy,',',gz,',',mx,',',my,',',mz)
 		
 		# STORE INFORMATION INTO A .csv FILE
-		# GET THE CURRENT POSITION FROM A FILE
+		fileName = strcat('data',num2str(currentFile,'%.2i'), '.csv')
+		writePath = strcat('C:\Users\gabri\Desktop\180d_data', fileName)
+		f = open(writePath,'w+')
+		writer = csv.writer(fileName, quoting=csv.QUOTE_ALL)
+		writer.writerow(data)
+		f.close;
+		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
+		# GET THE CURRENT POSITION
 		
 		# if stomped:
 		#	CLASSIFY LOCATION INTO AN INSTRUMENT
@@ -92,30 +104,27 @@ print 'Starting main'	# WEEDLE
 
 counter = 0
 while counter < EXPECTED_USERS*2:
-	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)	# Create a socket object
+	s = socket.socket()	# Create a socket object
 	s.bind((HOST,PORT))	# Bind to the port
-	print 'Starting listen'
-	s.listen(1)		# backlog = max # of queued connections; Waiting for connection
-	print 'Starting listen'
+	s.listen(5)		# backlog = max # of queued connections
+				# Waiting for connection
 	c, addr = s.accept()	# Establish connection with client
 	print 'Connected to ', addr	# WEEDLE
-	data = int(c.recv(1))	# Receive id from client (e.g. 0x1F)
+	data = int(c.recv(2))	# Receive id from client (e.g. 0x1F)
 	print 'Connected with ID ', data	#WEEDLE
 
-	client_type = data >> 8;	# 1 -> foot; 0 -> hand
+	client_type = data >> 8;	# 0 -> foot; 1 -> hand
 	client_ID = data & 0x0F;
-	if client_type == 1:
+	if client_type == 0:
 		if fIDtoSocket.has_key(client_ID):	# maybe this should stop
 			print 'Already connected with foot client ', client_ID
 			continue
 		fIDtoSocket[client_ID] = c	# i really hope this is passed-by-value
-		print "Connected with foot client ", client_ID
-	elif client_type == 0:
+	else if client_type == 1:
 		if hIDtoSocket.has_key(client_ID):	# maybe this should stop
 			print 'Already connected with hand client ', client_ID
 			continue
 		hIDtoSocket[client_ID] = c
-		print "Connected with hand client ", client_ID
 	else:
 		print "Invalid client ID"
 		sys.exit()
