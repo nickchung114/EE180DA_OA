@@ -6,24 +6,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
-#include <mraa/i2c.h>
-#include "LSM9DS0.h"
-#include <math.h>
-
-#define ACCEL_X_OFFSET	0 //0.075707
-#define ACCEL_X_SCALE	1
-#define ACCEL_Y_OFFSET	0
-#define ACCEL_Y_SCALE	1
-#define ACCEL_Z_OFFSET	1 
-#define ACCEL_Z_SCALE	1//0.997808
-
-#define NUM_NOTES	5
-
-
-float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
-	*curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
-	return *curr_avg;
-}
 
 void error(const char *msg)
 {
@@ -33,27 +15,6 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-	fflush(stdout);
-	//set up 9DOF
-	data_t accel_data, gyro_data, mag_data;
-	data_t gyro_offset;
-	int16_t temperature;
-	float a_res, g_res, m_res;
-	float norm; 
-	mraa_i2c_context accel, gyro, mag;
-	accel_scale_t a_scale = A_SCALE_4G;
-	gyro_scale_t g_scale = G_SCALE_245DPS;
-	mag_scale_t m_scale = M_SCALE_2GS;
-	float x_angle;
-	//int counter=1;
-	float cali_xyz[3]={0,0,0};
-	int classify = 0, j;
-	
-	accel = accel_init();
-	set_accel_scale(accel, a_scale);	
-	a_res = calc_accel_res(a_scale);
-	
-	//Set up server connection
 	int client_socket_fd, portno, n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
@@ -74,7 +35,6 @@ int main(int argc, char *argv[])
 	 */
 
 	client_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	
 
 	// check if the socket was created successfully. If it wasnt, display an error and exit
 	if(client_socket_fd < 0) {
@@ -83,7 +43,6 @@ int main(int argc, char *argv[])
 
 	// check if the IP entered by the user is valid 
 	server = gethostbyname(argv[1]);
-	
 	if (server == NULL) {
 		fprintf(stderr,"ERROR, no such host\n");
 		exit(0);
@@ -102,7 +61,7 @@ int main(int argc, char *argv[])
 	if (connect(client_socket_fd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){ 
 		error("ERROR connecting");
 	}
-	printf("check\n");
+	
 	/*
 	// get user input
 	printf("Please enter the message: ");
@@ -112,41 +71,29 @@ int main(int argc, char *argv[])
 	// send user input to the server
 	n = write(client_socket_fd,buffer,strlen(buffer));
 	*/
-	uint16_t id = 0x10;
-	n = write(client_socket_fd,&id,2);
+	int i = 13;
+	n = write(client_socket_fd,&i,2);
 	
 	// n contains how many bytes were received by the server
 	// if n is less than 0, then there was an error
 	if (n < 0) {
 		error("ERROR writing to socket");
-		return 1;
 	}
-	
+
 	// clear out the buffer
 	memset(buffer, 0, 256);
-	int stomp = 0;
-	int stompLastPlayed = 0;
-	while(1)
-	{
-		stomp = 0;
-		//Read sensor data
-		accel_data = read_accel(accel, a_res);
-		gyro_data = read_gyro(gyro, g_res); //How do you use gyro_offset?
-		
-		float energy = sqrt(accel_data.x*accel_data.x + accel_data.y*accel_data.y + accel_data.z*accel_data.z);
-		if(energy > 3 && stompLastPlayed == 0)
-		{
-			stomp = 1;
-			stompLastPlayed = 20;
-		}
-		dprintf(client_socket_fd,"%f, %f, %f, %f, %f, %f, %f\n",stomp, accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z);
-		if(stompLastPlayed > 0)
-		{
-			stompLastPlayed -= 1;
-		}
-		sleep(1/256);
+
+	//sleep(1);
+
+	// get the response from the server and print it to the user
+	n = read(client_socket_fd, buffer, 255);
+	if (n < 0) {
+		error("ERROR reading from socket");
 	}
+	printf("%s\n",buffer);
+
 	// clean up the file descriptors
 	close(client_socket_fd);
+	
 	return 0;
 }
