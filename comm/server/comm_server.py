@@ -66,15 +66,16 @@ def foot_main(my_id):
 	while True:
 		# receiving orientation (accel + gyro) and stomped
 		data = fIDtoSocket[my_id].recv(7)
-		print 'I received stuff!'	# WEEDLE
+		print 'Data I received:', data	# WEEDLE
 		
 		# FIGURE OUT HOW TO GET THE SIX INTS OUT FROM DATA
 		# ax is a string 
 		# data = strcat(ax,',',ay,',',az,',',gx,',',gy,',',gz,',',mx,',',my,',',mz)
 		
 		# STORE INFORMATION INTO A .csv FILE
-		fileName = strcat('data',num2str(currentFile,'%.2i'), '.csv')
-		writePath = strcat('C:\Users\gabri\Desktop\180d_data', fileName)
+		fileName = ''.join(['data',num2str(currentFile,'%.2i'), '.csv'])
+		# http://stackoverflow.com/a/36906785
+		writePath = ''.join(['C:\Users\gabri\Desktop\180d_data', fileName])
 		f = open(writePath,'w+')
 		writer = csv.writer(fileName, quoting=csv.QUOTE_ALL)
 		writer.writerow(data)
