@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	}
 	printf("connected. trying to write.\n");
 	// send user input to the server
-	uint16_t x = 0x00;
+	uint8_t x = 0x00;
 	n = write(client_socket_fd,&x,2);
 
 	// n contains how many bytes were received by the server
