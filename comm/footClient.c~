@@ -33,7 +33,7 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-	fflush();
+	fflush(stdout);
 	//set up 9DOF
 	data_t accel_data, gyro_data, mag_data;
 	data_t gyro_offset;
