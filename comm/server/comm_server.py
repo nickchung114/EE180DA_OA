@@ -108,23 +108,25 @@ while counter < EXPECTED_USERS*2:
 	s.bind((HOST,PORT))	# Bind to the port
 	s.listen(5)		# backlog = max # of queued connections
 				# Waiting for connection
+	print 'Accepting...'	# WEEDLE
 	c, addr = s.accept()	# Establish connection with client
 	print 'Connected to ', addr	# WEEDLE
 	data = bytearray(c.recv(2))[0]	# Receive id from client (e.g. 0x1F)
-	print 'Connected with type/ID ', data	#WEEDLE
 
-	client_type = data >> 8;	# 0 -> foot; 1 -> hand
+	client_type = data >> 8;	# 1 -> foot; 0 -> hand
 	client_ID = data & 0x0F;
-	if client_type == 0:
-		if fIDtoSocket.has_key(client_ID):	# maybe this should stop
+	if client_type == 1:
+		if fIDtoSocket.has_key(client_ID):
 			print 'Already connected with foot client ', client_ID
-			continue
+			continue	# maybe this should stop
 		fIDtoSocket[client_ID] = c	# i really hope this is passed-by-value
-	else if client_type == 1:
-		if hIDtoSocket.has_key(client_ID):	# maybe this should stop
+		print 'Connected with foot client ', client_ID
+	elif client_type == 0:
+		if hIDtoSocket.has_key(client_ID):
 			print 'Already connected with hand client ', client_ID
-			continue
+			continue	# maybe this should stop
 		hIDtoSocket[client_ID] = c
+		print 'Connected with hand client ', client_ID
 	else:
 		print "Invalid client ID"
 		sys.exit()
