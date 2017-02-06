@@ -62,7 +62,7 @@ def hand_main(my_id, instrument):
 # 	spawn a thread (Thread 3) for corresponding hand client
 def foot_main(my_id):
 	print 'Starting foot_main with client ID', my_id	# WEEDLE
-	currentFile = 0; 
+	currFileInd = 0; 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
 		data = fIDtoSocket[my_id].recv(7)
@@ -73,7 +73,8 @@ def foot_main(my_id):
 		# data = strcat(ax,',',ay,',',az,',',gx,',',gy,',',gz,',',mx,',',my,',',mz)
 		
 		# STORE INFORMATION INTO A .csv FILE
-		fileName = ''.join(['data',num2str(currentFile,'%.2i'), '.csv'])
+		fileName = ''.join(['data',num2str(currFileInd,'%.2i'), '.csv'])
+		currFileInd = (currFileInd + 1) % 100;
 		# http://stackoverflow.com/a/36906785
 		writePath = ''.join(['C:\Users\gabri\Desktop\180d_data', fileName])
 		f = open(writePath,'w+')
