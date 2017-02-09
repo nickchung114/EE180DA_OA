@@ -26,21 +26,24 @@ start = timer()
 
 counter = 0;
 while 1:
-    # conn.recv(x) receives a sequences of bytes
-    # .decode('utf-8') converts that into a string, and .rstrip removes newlines
-    #data = (conn.recv(BUFFER_SIZE)).decode('utf-8').rstrip('\n')
-    # takes the ints (encoded as bytes) and returns int
-    data = conn.recv(BUFFER_SIZE)
-    counter = counter + 1
+	# conn.recv(x) receives a sequences of bytes
+	# .decode('utf-8') converts that into a string, and .rstrip removes newlines
+	#data = (conn.recv(BUFFER_SIZE)).decode('utf-8').rstrip('\n')
+	# takes the ints (encoded as bytes) and returns int
+	data = conn.recv(BUFFER_SIZE)
+	counter = counter + 1
 	#if not data:   # checks if what we received was 'nothing'
-    #   # ASSUMPTION 2: THE CLIENT CONTINUE WRITING
-    #    continue
-    data = int.from_bytes(data, byteorder='big')
-    if data == 0:
-        break
-    #print(data, type(data))
-    #winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME | winsound.SND_ASYNC))
-    #conn.sendall(bytes('Word', 'UTF-8'))
+	#   # ASSUMPTION 2: THE CLIENT CONTINUE WRITING
+	#    continue
+	data = int.from_bytes(data, byteorder='big')
+	if data == 0:
+		break
+	#print(data, type(data))
+	#if Note_old < 11 or Note_old > 15: #Stop playing the previous note if it is a wind or instrument or violin.
+		#winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME | winsound.SND_PURGE))
+	#winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME | winsound.SND_ASYNC))
+	#conn.sendall(bytes('Word', 'UTF-8'))
+	#Note_old = Note;
 print("{}".format(timer() - start))
 print(counter)
 conn.close()
