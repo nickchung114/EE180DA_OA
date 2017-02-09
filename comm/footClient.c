@@ -126,6 +126,9 @@ int main(int argc, char *argv[])
 	
 	// clear out the buffer
 	memset(buffer, 0, 256);
+	
+	// READ A CONFIRMATION FROM SERVER
+	
 	int stomp = 0;
 	int stompLastPlayed = 0;
 	while(1)
@@ -134,7 +137,6 @@ int main(int argc, char *argv[])
 		//Read sensor data
 		accel_data = read_accel(accel, a_res);
 		gyro_data = read_gyro(gyro, g_res); //How do you use gyro_offset?
-		
 		float energy = sqrt(accel_data.x*accel_data.x + accel_data.y*accel_data.y + accel_data.z*accel_data.z);
 		if(energy > 3 && stompLastPlayed == 0)
 		{
@@ -142,6 +144,7 @@ int main(int argc, char *argv[])
 			stompLastPlayed = 20;
 		}
 		dprintf(client_socket_fd,"%f, %f, %f, %f, %f, %f, %f\n",stomp, accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z);
+		printf("wrote to server\n");
 		if(stompLastPlayed > 0)
 		{
 			stompLastPlayed -= 1;
