@@ -73,7 +73,7 @@ def foot_main(my_id):
 		# data = strcat(ax,',',ay,',',az,',',gx,',',gy,',',gz,',',mx,',',my,',',mz)
 		
 		# STORE INFORMATION INTO A .csv FILE
-		fileName = ''.join(['data',num2str(currFileInd,'%.2i'), '.csv'])
+		fileName = ''.join(['batch',str(currFileInd),'_CalInertialAndMag.csv'])
 		currFileInd = (currFileInd + 1) % 100;
 		# http://stackoverflow.com/a/36906785
 		dir = os.path.dirname(__file__)
