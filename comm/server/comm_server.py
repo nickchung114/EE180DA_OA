@@ -65,7 +65,7 @@ def foot_main(my_id):
 	currFileInd = 0; 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
-		data = fIDtoSocket[my_id].recv(7)
+		data = fIDtoSocket[my_id].recv(10)
 		print 'Data I received:', data	# WEEDLE
 		
 		# FIGURE OUT HOW TO GET THE SIX INTS OUT FROM DATA
@@ -76,11 +76,13 @@ def foot_main(my_id):
 		fileName = ''.join(['data',num2str(currFileInd,'%.2i'), '.csv'])
 		currFileInd = (currFileInd + 1) % 100;
 		# http://stackoverflow.com/a/36906785
-		writePath = ''.join(['C:\Users\gabri\Desktop\180d_data', fileName])
+		dir = os.path.dirname(__file__)
+		writePath = os.path.join(dir, 'csv', fileName)
+		
 		f = open(writePath,'w+')
 		writer = csv.writer(fileName, quoting=csv.QUOTE_ALL)
 		writer.writerow(data)
-		f.close;
+		f.close();
 		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
 		# GET THE CURRENT POSITION
 		
