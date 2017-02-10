@@ -20,7 +20,6 @@ import threading
 import collections	# for Counter()
 import csv
 import os
-import matlab.engine
 
 
 #################################################
@@ -35,8 +34,7 @@ hIDtoSocket = {}
 fIDtoSocket = {}
 
 # Start MATLAB script
-eng = matlab.engine.start_matlab()
-eng.Script_batched()
+
 
 #################################################
 ############# FUNCTION DECLARATIONS #############
