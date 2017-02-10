@@ -20,6 +20,8 @@ import threading
 import collections	# for Counter()
 import csv
 import os
+import matlab.engine
+
 
 #################################################
 ############## VARIABLE DECLARATIONS ############
@@ -31,6 +33,10 @@ EXPECTED_USERS = 1		# Number of users
 
 hIDtoSocket = {}
 fIDtoSocket = {}
+
+# Start MATLAB script
+eng = matlab.engine.start_matlab()
+eng.Script_batched()
 
 #################################################
 ############# FUNCTION DECLARATIONS #############
