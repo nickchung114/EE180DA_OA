@@ -21,7 +21,6 @@ import collections	# for Counter()
 import csv
 import os
 
-
 #################################################
 ############## VARIABLE DECLARATIONS ############
 #################################################
@@ -32,9 +31,6 @@ EXPECTED_USERS = 1		# Number of users
 
 hIDtoSocket = {}
 fIDtoSocket = {}
-
-# Start MATLAB script
-
 
 #################################################
 ############# FUNCTION DECLARATIONS #############
@@ -66,6 +62,7 @@ def hand_main(my_id, instrument):
 # 	spawn a thread (Thread 3) for corresponding hand client
 def foot_main(my_id):
 	print 'Starting foot_main with client ID', my_id	# WEEDLE
+	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
 	currFileInd = 0; 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
