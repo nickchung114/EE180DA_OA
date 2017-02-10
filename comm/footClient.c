@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
 			stomp = 1;
 			stompLastPlayed = 20;
 		}
+		printf("%f, %f, %f, %f, %f, %f, %f\n",stomp, accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z);
 		dprintf(client_socket_fd,"%f, %f, %f, %f, %f, %f, %f\n",stomp, accel_data.x, accel_data.y, accel_data.z, gyro_data.x, gyro_data.y, gyro_data.z);
 		printf("wrote to server\n");
 		if(stompLastPlayed > 0)
