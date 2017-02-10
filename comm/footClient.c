@@ -128,7 +128,12 @@ int main(int argc, char *argv[])
 	memset(buffer, 0, 256);
 	
 	// READ A CONFIRMATION FROM SERVER
-	
+	n = read(client_socket_fd,buffer,255);
+	if(n < 0) {
+		error("ERROR reading from socket\n");
+	}
+	printf("Beginning to write...\n");
+
 	int stomp = 0;
 	int stompLastPlayed = 0;
 	while(1)
