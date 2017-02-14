@@ -1,20 +1,46 @@
 #include <stdio.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <mraa/i2c.h>
 #include "LSM9DS0.h"
 
+// *** TODO read in config file
 //#define DEBUG
+#define BATCH_SIZE 256
+#define MAX_FILES 1
+#define MAX_NUM_FILES 20 // only makes sense if MAX_FILES is 1
+#define SAMP_RATE 256
+#define INIT_SEC 2
+#define MAX_BUF 128 // Maximum string size
 
 int main() {
   data_t accel_data, gyro_data, mag_data;
   data_t gyro_offset;
-  int16_t temperature;
   float a_res, g_res, m_res;
   mraa_i2c_context accel, gyro, mag;
-  accel_scale_t a_scale = A_SCALE_4G;
-  gyro_scale_t g_scale = G_SCALE_245DPS;
+  //accel_scale_t a_scale = A_SCALE_4G;
+  accel_scale_t a_scale = A_SCALE_8G;
+  //gyro_scale_t g_scale = G_SCALE_245DPS;
+  gyro_scale_t g_scale = G_SCALE_2000DPS;
   mag_scale_t m_scale = M_SCALE_2GS;
-  FILE *fp = fopen("/home/root/gather_data/data.csv", "w");
-  int i = 1;
+
+  char dir_name[MAX_BUF];
+  struct stat st = {0};
+  time_t t = time(NULL);
+  struct tm *now = localtime(&t);
+  char file_name[MAX_BUF];
+
+  int i = 0;
+  int j;
+  int file_num = 0;
+  int init_sam = (SAMP_RATE*INIT_SEC)+1;
+  FILE *fp;
+  
+  strftime(dir_name, MAX_BUF, "data_%F_%H-%M-%S", now);
+
+  if (stat(dir_name, &st) == -1) mkdir(dir_name, 0755);
+  printf("Directory name: %s\n", dir_name);
 
   //initialize sensors, set scale, and calculate resolution.
   accel = accel_init();
@@ -31,36 +57,47 @@ int main() {
 
   gyro_offset = calc_gyro_offset(gyro, g_res);
 
-  #ifdef DEBUG
-  printf("x: %f y: %f z: %f\n", gyro_offset.x, gyro_offset.y, gyro_offset.z);
-  
+#ifdef DEBUG
+  printf("GYRO OFFSETS x: %f y: %f z: %f\n",
+	 gyro_offset.x, gyro_offset.y, gyro_offset.z);
+#endif
+
+  //Read the sensor data and print them.
+  printf("STARTING TO COLLECT DATA\n");
+
+#ifdef DEBUG
   printf("\n\t\tAccelerometer\t\t\t||");
   printf("\t\t\tGyroscope\t\t\t||");
-  printf("\t\t\tMagnetometer\t\t\t||");
-  //printf("\tTemperature\n");
-  #endif
-	
-  //Read the sensor data and print them.
-  printf("STARTING\n");
-  while(1) {
-    if (i%1000 == 0) printf("%i points\n", i);
-    accel_data = read_accel(accel, a_res);
-    gyro_data = read_gyro(gyro, g_res);
-    mag_data = read_mag(mag, m_res);
-    //temperature = read_temp(accel); //you can put mag as the parameter too.
-    #ifdef DEBUG
-    printf("X: %f\t Y: %f\t Z: %f\t||", accel_data.x, accel_data.y, accel_data.z);
-    printf("\tX: %f\t Y: %f\t Z: %f\t||", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z);
-    printf("\tX: %f\t Y: %f\t Z: %f\t||", mag_data.x, mag_data.y, mag_data.z);
-    //printf("\t%ld\n", temperature);
-    #endif
-    fprintf(fp, "%i,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", i, gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z,
-	    accel_data.x, accel_data.y, accel_data.z, mag_data.x, mag_data.y, mag_data.z);
-	    
-    usleep(3500);
-    i++;
-  }
+  printf("\t\t\tMagnetometer\n");
+#endif
+  
+  while ((!MAX_FILES) || (MAX_FILES && file_num < MAX_NUM_FILES)) {
+    sprintf(file_name, "%s/data%02d_CalInertialAndMag.csv",
+	    dir_name, file_num);
+    fp = fopen(file_name, "w");
+    for (j = 0; j < BATCH_SIZE; j++) {
+      if (i%1000 == 0) printf("%i points\n", i);
+      if (i == init_sam) printf("INITIALIZATION PERIOD DONE\n");
+      accel_data = read_accel(accel, a_res);
+      gyro_data = read_gyro(gyro, g_res);
+      mag_data = read_mag(mag, m_res);
 
-  fclose(fp);
+#ifdef DEBUG
+      printf("X: %f\t Y: %f\t Z: %f\t||", accel_data.x, accel_data.y, accel_data.z);
+      printf("\tX: %f\t Y: %f\t Z: %f\t||", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z);
+      printf("\tX: %f\t Y: %f\t Z: %f\n", mag_data.x, mag_data.y, mag_data.z);
+#endif
+
+      fprintf(fp, "%i,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", j+1,
+	      gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z,
+	      accel_data.x, accel_data.y, accel_data.z,
+	      mag_data.x, mag_data.y, mag_data.z);
+      i++;
+    }
+
+    usleep(1000000/SAMP_RATE);
+    fclose(fp);
+    file_num++;
+  }
   return 0;	
 }

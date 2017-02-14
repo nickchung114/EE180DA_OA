@@ -1,23 +1,29 @@
-%clear;
+clear;
 close all;
 clc;
 addpath('Quaternions');
 addpath('ximu_matlab_library');
 
 % CONSTANTS
+DEBUG = 1;
+PLOT = 1;
+ANIMATE = 1;
+PERSISTENT_DATA = 1;
 batchSize = 256;
 sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
-DEBUG = 1;
-PLOT = 1;
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
+stationaryThresh = 0.005;
 
 % for visualization
 runningPos = zeros(0,3);
+runningGyr = zeros(0,3);
+runningAcc = zeros(0,3);
 runningQuat = zeros(0,4);
 runningStationary = zeros(0,1);
 runningVel = zeros(0,3);
+runningFilt = zeros(0,3);
 
 initCount = 0;
 initDone = 0;
@@ -38,15 +44,14 @@ currentVelocity = zeros(1,3);
 % -------------------------------------------------------------------------
 % Select dataset (comment in/out)
 
-filePath = 'split_files_256/straightLine';
+%filePath = 'split_files_256/straightLine';
 %filePath = 'split_files_1024/straightLine';
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
-%filePath = 'split_files_4/data';
-%filePath = 'Datasets/data';
+filePath = 'data_2017-02-09_17-52-11/data';
 
-%filePath = 'split_files_4/stairsAndCorridor';
+%filePath = 'Datasets/stairsAndCorridor';
 
 %filePath = 'Datasets/spiralStairs';
 
@@ -57,7 +62,8 @@ filtCutOffHigh = 5; % needs to be higher for df1 to work...?
 [bh2, ah2] = butter(1, .001/(sampRate/2), 'high');
 hdh = dfilt.df1(bh, ah);
 hdh.PersistentMemory = true; % remember state between filters
-hdh.states = 0; % initial state set to 0 b/c stationary at first
+%hdh.states = 0; % initial state set to 0 b/c stationary at first
+hdh.states = 1;
 
 % LPF Stuff
 filtCutOffLow = 5;
@@ -169,49 +175,21 @@ while (1)
         acc_mag = sqrt(accX.*accX + accY.*accY + accZ.*accZ);
 
         % HP filter accelerometer data
-        acc_magFilt1 = filtfilt(bh2, ah2, acc_mag);
+        %acc_magFilt1 = filtfilt(bh2, ah2, acc_mag);
         acc_magFilt = filter(hdh, acc_mag);
 
         % Compute absolute value
-        acc_magFilt1 = abs(acc_magFilt1);
+        %acc_magFilt1 = abs(acc_magFilt1);
         acc_magFilt = abs(acc_magFilt);
 
         % LP filter accelerometer data
-        acc_magFilt1 = filtfilt(bl, al, acc_magFilt1);
+        %acc_magFilt1 = filtfilt(bl, al, acc_magFilt1);
         acc_magFilt = filter(hdl, acc_magFilt);
 
         % Threshold detection
-        stationary1 = acc_magFilt1 < 0.05;
-        stationary = acc_magFilt < 0.05;
+        %stationary1 = acc_magFilt1 < 0.05;
+        stationary = acc_magFilt < stationaryThresh;
         %fprintf('Stationary diff for file %i: %i\n', currentFile, sum(abs(stationary-stationary1)));
-    
-        % -------------------------------------------------------------------------
-        % Plot data raw sensor data and stationary periods
-
-%         figure('Position', [9 39 900 600], 'Number', 'off', 'Name', 'Sensor Data');
-%         ax(1) = subplot(2,1,1);
-%             hold on;
-%             plot(time, gyrX, 'r');
-%             plot(time, gyrY, 'g');
-%             plot(time, gyrZ, 'b');
-%             title('Gyroscope');
-%             xlabel('Time (s)');
-%             ylabel('Angular velocity (^\circ/s)');
-%             legend('X', 'Y', 'Z');
-%             hold off;
-%         ax(2) = subplot(2,1,2);
-%             hold on;
-%             plot(time, accX, 'r');
-%             plot(time, accY, 'g');
-%             plot(time, accZ, 'b');
-%             plot(time, acc_magFilt, ':k');
-%             plot(time, stationary, 'k', 'LineWidth', 2);
-%             title('Accelerometer');
-%             xlabel('Time (s)');
-%             ylabel('Acceleration (g)');
-%             legend('X', 'Y', 'Z', 'Filtered', 'Stationary');
-%             hold off;
-%         linkaxes(ax,'x');
 
         % -------------------------------------------------------------------------
         % Compute orientation
@@ -344,6 +322,9 @@ while (1)
         runningPos = [runningPos; pos];
         runningQuat = [runningQuat; quat];
         runningStationary = [runningStationary; stationary];
+        runningGyr = [runningGyr; [gyrX gyrY gyrZ]];
+        runningAcc = [runningAcc; [accX accY accZ]];
+        runningFilt = [runningFilt; acc_magFilt];
     end
     
     if (~initDone)
@@ -360,6 +341,42 @@ end
 if (PLOT)
     if (size(runningPos,1) > 0)
         fprintf('Now plotting...\n');
+        
+                % -------------------------------------------------------------------------
+        % Plot data raw sensor data and stationary periods
+    
+        figure('Position', [9 39 900 600], 'NumberTitle', 'off', 'Name', 'Sensor Data');
+        ax(1) = subplot(2,1,1);
+            hold on;
+            %plot(time, runningGyr(:,1), 'r');
+            %plot(time, runningGyr(:,2), 'g');
+            %plot(time, runningGyr(:,3), 'b');
+            plot(runningGyr(:,1), 'r');
+            plot(runningGyr(:,2), 'g');
+            plot(runningGyr(:,3), 'b');
+            title('Gyroscope');
+            xlabel('Time (s)');
+            ylabel('Angular velocity (^\circ/s)');
+            legend('X', 'Y', 'Z');
+            hold off;
+        ax(2) = subplot(2,1,2);
+            hold on;
+            %plot(time, runningAcc(:,1), 'r');
+            %plot(time, runningAcc(:,2), 'g');
+            %plot(time, runningAcc(:,3), 'b');
+            %plot(time, runningFilt, ':k');
+            %plot(time, runningStationary, 'k', 'LineWidth', 2);
+            plot(runningAcc(:,1), 'r');
+            plot(runningAcc(:,2), 'g');
+            plot(runningAcc(:,3), 'b');
+            plot(runningFilt, ':k');
+            plot(runningStationary, 'k', 'LineWidth', 2);
+            title('Accelerometer');
+            xlabel('Time (s)');
+            ylabel('Acceleration (g)');
+            legend('X', 'Y', 'Z', 'Filtered', 'Stationary');
+            hold off;
+        linkaxes(ax,'x');
 
         % % Plot translational position
         % figure('Position', [9 39 900 600], 'NumberTitle', 'off', 'Name', 'Position');
@@ -383,20 +400,23 @@ if (PLOT)
         quatPlot = runningQuat;
 
         % Extend final sample to delay end of animation
-        extraTime = 20;
-        onesVector = ones(extraTime*sampRate, 1);
-        posPlot = [posPlot; [posPlot(end, 1)*onesVector, posPlot(end, 2)*onesVector, posPlot(end, 3)*onesVector]];
-        quatPlot = [quatPlot; [quatPlot(end, 1)*onesVector, quatPlot(end, 2)*onesVector, quatPlot(end, 3)*onesVector, quatPlot(end, 4)*onesVector]];
+%         extraTime = 20;
+%         onesVector = ones(extraTime*sampRate, 1);
+%         posPlot = [posPlot; [posPlot(end, 1)*onesVector, posPlot(end, 2)*onesVector, posPlot(end, 3)*onesVector]];
+%         quatPlot = [quatPlot; [quatPlot(end, 1)*onesVector, quatPlot(end, 2)*onesVector, quatPlot(end, 3)*onesVector, quatPlot(end, 4)*onesVector]];
 
-        % Create 6 DOF animation
-        SamplePlotFreq = 8;
-        Spin = 120;
-        SixDofAnimation(posPlot, quatern2rotMat(quatPlot), ...
-                        'SamplePlotFreq', SamplePlotFreq, 'Trail', 'All', ...
-                        'Position', [9 39 1280 768], 'View', [(100:(Spin/(length(posPlot)-1)):(100+Spin))', 10*ones(length(posPlot), 1)], ...
-                        'AxisLength', 0.1, 'ShowArrowHead', false, ...
-                        'Xlabel', 'X (m)', 'Ylabel', 'Y (m)', 'Zlabel', 'Z (m)', 'ShowLegend', false, ...
-                        'CreateAVI', false, 'AVIfileNameEnum', false, 'AVIfps', (sampRate / SamplePlotFreq));
+        if (ANIMATE)
+            % Create 6 DOF animation
+            SamplePlotFreq = 4;
+            Spin = 120;
+            figure;
+            SixDofAnimation(posPlot, quatern2rotMat(quatPlot), ...
+                            'SamplePlotFreq', SamplePlotFreq, 'Trail', 'All', ...
+                            'Position', [9 39 1280 768], 'View', [(100:(Spin/(length(posPlot)-1)):(100+Spin))', 10*ones(length(posPlot), 1)], ...
+                            'AxisLength', 0.1, 'ShowArrowHead', false, ...
+                            'Xlabel', 'X (m)', 'Ylabel', 'Y (m)', 'Zlabel', 'Z (m)', 'ShowLegend', false, ...
+                            'CreateAVI', false, 'AVIfileNameEnum', false, 'AVIfps', (sampRate / SamplePlotFreq));
+        end
     else
         fprintf('Nothing to plot...\n');
     end
