@@ -32,6 +32,8 @@ EXPECTED_USERS = 1		# Number of users
 
 hIDtoSocket = {}
 fIDtoSocket = {}
+batpath = r"C:\\Users\\gabri\\Documents\\180DA\\"     
+
 
 #################################################
 ############# FUNCTION DECLARATIONS #############
@@ -65,7 +67,6 @@ def foot_main(my_id):
 	print 'Starting foot_main with client ID', my_id	# WEEDLE
 	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
 	currFileInd = 0; 
-	batpath = r"C:\\Users\\gabri\\Documents\\180DA\\"     
 	p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
 
 	while True:
