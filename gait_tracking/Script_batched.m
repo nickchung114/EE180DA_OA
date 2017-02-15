@@ -14,7 +14,8 @@ sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
-stationaryThresh = 0.005;
+stationaryThresh = .05; % This shouldn't be too low or the algo won't think a step ever happened
+%stationaryThresh = 0.005;
 
 % for visualization
 runningPos = zeros(0,3);
