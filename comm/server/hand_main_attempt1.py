@@ -6,7 +6,7 @@ def hand_main(my_id, instrument, Note_old) # will need to add a variable Note_ol
 	# WAIT
 	# RECEIVE CLASSIFIED DATA (i.e. NOTE)
 	data1 = hIDtoSocket[my_id].recv(1024)
-	data2 = data.split(,)
+	data2 = data1.split(,)
 	data3 = [int(e) for e in data2]
 	pitch = data3[1]
 	
@@ -17,7 +17,7 @@ def hand_main(my_id, instrument, Note_old) # will need to add a variable Note_ol
                 'Violin_c.wav','Violin_d.wav','Violin_e.wav','Violin_f.wav','Violin_g.wav']
 	if Note_old  11 or Note_old  15 #Stop playing the previous note if it is a wind or instrument or violin.
 		winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME  winsound.SND_PURGE))
-	Note = pitch + 5instrument
+	Note = pitch + 5*instrument
 	winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME  winsound.SND_ASYNC))
 	conn.sendall(bytes('Word', 'UTF-8'))
 	Note_old = Note;
