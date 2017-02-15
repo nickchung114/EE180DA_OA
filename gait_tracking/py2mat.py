@@ -1,5 +1,3 @@
-
-
 #################################################
 ############## VARIABLE DECLARATIONS ############
 #################################################
@@ -17,8 +15,9 @@
 
 
 import subprocess 
-batpath = r"C:\\Users\\gabri\\OneDrive\\Documents\\180DA\\Gait-Tracking-With-x-IMU-master\\"     
-p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
+batpath = r"../comm/server/" #r"C:\\Users\\gabri\\OneDrive\\Documents\\180DA\\Gait-Tracking-With-x-IMU-master\\"     
+#p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
+p = subprocess.Popen("testingpy2mat.sh", cwd=batpath, shell=True)
 
 #p = subprocess.Popen("testingpy2mat.bat", cwd=r"C:\\Users\\gabri\\Documents\\180DA\\", shell=True)
 
