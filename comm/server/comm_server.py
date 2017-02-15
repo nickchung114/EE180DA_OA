@@ -73,11 +73,11 @@ def foot_main(my_id):
 	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
 	currFileInd = 0; 
 	Note_old = 0
-	p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
+	#p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
-		data = fIDtoSocket[my_id].recv(10)
+		data = fIDtoSocket[my_id].recv(1024)
 		print 'Data I received:', data	# WEEDLE
 		
 		# FIGURE OUT HOW TO GET THE SIX INTS OUT FROM DATA
@@ -90,16 +90,16 @@ def foot_main(my_id):
 		#data_list = [int(e) for e in aux]
 		
 		# STORE INFORMATION INTO A .csv FILE
-		fileName = ''.join(['batch',str(currFileInd),'_CalInertialAndMag.csv'])
-		currFileInd = (currFileInd + 1) % 100;
+		#fileName = ''.join(['batch',str(currFileInd),'_CalInertialAndMag.csv'])
+		#currFileInd = (currFileInd + 1) % 100;
 		# http://stackoverflow.com/a/36906785
-		dir = os.path.dirname(__file__)
-		writePath = os.path.join(dir, 'csv', fileName)
+		#dir = os.path.dirname(__file__)
+		#writePath = os.path.join(dir, 'csv', fileName)
 		
-		f = open(writePath,'w+')
-		writer = csv.writer(fileName, quoting=csv.QUOTE_ALL)
-		writer.writerow(data)
-		f.close();
+		#f = open(writePath,'w+')
+		#writer = csv.writer(fileName, quoting=csv.QUOTE_ALL)
+		#writer.writerow(data)
+		#f.close();
 		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
 		# GET THE CURRENT POSITION
 		
