@@ -6,16 +6,15 @@ addpath('ximu_matlab_library');
 
 % CONSTANTS
 DEBUG = 1;
-PLOT = 1;
-ANIMATE = 1;
+PLOT = 0;
+ANIMATE = 0;
 PERSISTENT_DATA = 1;
 batchSize = 256;
 sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
-stationaryThresh = .05; % This shouldn't be too low or the algo won't think a step ever happened
-%stationaryThresh = 0.005;
+stationaryThresh = 0.05;
 
 % for visualization
 runningPos = zeros(0,3);
@@ -45,16 +44,18 @@ currentVelocity = zeros(1,3);
 % -------------------------------------------------------------------------
 % Select dataset (comment in/out)
 
-%filePath = 'split_files_256/straightLine';
+filePath = 'split_files_256/straightLine';
 %filePath = 'split_files_1024/straightLine';
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
-filePath = 'data_2017-02-09_17-52-11/data';
+%filePath = 'data_2017-02-09_17-52-11/data';
 
 %filePath = 'Datasets/stairsAndCorridor';
 
 %filePath = 'Datasets/spiralStairs';
+
+currentMat2pyFilename = 'currentPositionFile';
 
 % HPF Stuff
 %filtCutOffHigh = 0.001; % in Hz. Just cut out DC component
@@ -336,6 +337,8 @@ while (1)
         fprintf('After File %d: %f %f %f at %i samples\n', currentFile, currentPosition(end,1), currentPosition(end,2), currentPosition(end,3), size(runningPos,1));
     end
     
+    currentMat2pyFilename = strcat('currentPositionFile', num2str(currentFile,'%.2i'));
+    csvwrite(currentMat2pyFilename,currentPosition(end,:)); 
     currentFile = mod((currentFile + 1), bufSize);
 end
 
