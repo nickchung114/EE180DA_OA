@@ -10,21 +10,6 @@
 #include "LSM9DS0.h"
 #include <math.h>
 
-#define ACCEL_X_OFFSET	0 //0.075707
-#define ACCEL_X_SCALE	1
-#define ACCEL_Y_OFFSET	0
-#define ACCEL_Y_SCALE	1
-#define ACCEL_Z_OFFSET	1 
-#define ACCEL_Z_SCALE	1//0.997808
-
-#define NUM_NOTES	5
-
-
-float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
-	*curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
-	return *curr_avg;
-}
-
 void error(const char *msg)
 {
 	perror(msg);
