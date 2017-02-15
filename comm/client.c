@@ -130,13 +130,13 @@ int main(int argc, char *argv[])
 	//int continue = 1;
 	while(1)
 	{
-	n = read(client_socket_fd, buffer, 255);
-	if (n < 0) {
-		error("ERROR reading from socket");
-	}
+		n = read(client_socket_fd, buffer, 255);
+		if (n < 0) {
+			error("ERROR reading from socket");
+		}
 		
-	//code for classification.
-	accel_data = read_accel(accel, a_res);
+		//code for classification.
+		accel_data = read_accel(accel, a_res);
 		
 		cali_xyz[0] = accel_data.x;
 		//cali_xyz[1] = accel_data.y;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		dprintf(client_socket_fd,"Stationary XZ Angle: %f\t\t Class: %d\n",x_angle, classify);
+		dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
 	}
 	// clean up the file descriptors
 	close(client_socket_fd);

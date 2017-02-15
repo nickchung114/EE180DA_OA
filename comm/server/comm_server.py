@@ -20,6 +20,7 @@ import threading
 import collections	# for Counter()
 import csv
 import os
+import subprocess 
 
 #################################################
 ############## VARIABLE DECLARATIONS ############
@@ -31,6 +32,12 @@ EXPECTED_USERS = 1		# Number of users
 
 hIDtoSocket = {}
 fIDtoSocket = {}
+
+#Here, include the path to your bat file
+batpath = r"C:\\Users\\gabri\\Documents\\180DA\\"     
+#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
+
+
 
 #################################################
 ############# FUNCTION DECLARATIONS #############
@@ -64,6 +71,8 @@ def foot_main(my_id):
 	print 'Starting foot_main with client ID', my_id	# WEEDLE
 	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
 	currFileInd = 0; 
+	p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
+
 	while True:
 		# receiving orientation (accel + gyro) and stomped
 		data = fIDtoSocket[my_id].recv(10)
