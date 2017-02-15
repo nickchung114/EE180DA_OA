@@ -11,7 +11,6 @@ int main() {
 	accel_scale_t a_scale = A_SCALE_4G;
 	gyro_scale_t g_scale = G_SCALE_245DPS;
 
-	//initialize sensors, set scale, and calculate resolution.
 	accel = accel_init();
 	set_accel_scale(accel, a_scale);	
 	a_res = calc_accel_res(a_scale);
@@ -20,13 +19,8 @@ int main() {
 	set_gyro_scale(gyro, g_scale);
 	g_res = calc_gyro_res(g_scale);
 
-	gyro_offset = calc_gyro_offset(gyro, g_res);
-	printf("x: %f y: %f z: %f\n", gyro_offset.x, gyro_offset.y, gyro_offset.z);
+	gyro_offset = calc_gyro_offset(gyro, g_res);	
 
-	printf("\n\t\tAccelerometer\t\t\t||");
-	printf("\t\t\tGyroscope\n");
-	
-	//Read the sensor data and print them.
 	while(1) {
 		accel_data = read_accel(accel, a_res);
 		gyro_data = read_gyro(gyro, g_res);
