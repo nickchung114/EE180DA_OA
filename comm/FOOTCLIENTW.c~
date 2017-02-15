@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
 	
 	gyro_offset = calc_gyro_offset(gyro, g_res);
 
-	float ax, ay, az, gx, gy, gz;
 	while(1)
 	{
 		accel_data = read_accel(accel, a_res);
