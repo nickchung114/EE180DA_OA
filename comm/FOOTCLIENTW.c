@@ -132,7 +132,15 @@ int main(int argc, char *argv[])
 			stompLastPlayed = 20;
 		}
 		printf("%f, %f, %f, %f, %f, %f\n", ax, ay, az, gx, gy, gz);
+		dprintf(client_socket_fd,"1\n");
+		printf("wrote to server\n");
+		if(stompLastPlayed > 0)
+		{
+			stompLastPlayed -= 1;
+		}
 		sleep(1/256);
 	}
+	// clean up the file descriptors
+	close(client_socket_fd);
 	return 0;
 }
