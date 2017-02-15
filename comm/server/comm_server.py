@@ -32,7 +32,11 @@ EXPECTED_USERS = 1		# Number of users
 
 hIDtoSocket = {}
 fIDtoSocket = {}
+
+#Here, include the path to your bat file
 batpath = r"C:\\Users\\gabri\\Documents\\180DA\\"     
+#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
+
 
 
 #################################################
