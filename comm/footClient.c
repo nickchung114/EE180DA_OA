@@ -82,17 +82,17 @@ int main(int argc, char *argv[])
 	
 	// check if the socket was created successfully. If it wasnt, display an error and exit
 	if(client_socket_fd < 0) {
-		error("ERROR opening socket");
+		error("ERROR opening socket\n");
 	}
 
 	// check if the IP entered by the user is valid 
 	server = gethostbyname(argv[1]);
 	if (server == NULL) {
-		fprintf(stderr,"ERROR, no such host\n");
+		fprintf(stderr,"ERROR: no such host\n");
 		exit(0);
 	}
 	
-	// clear our the serv_addr buffer
+	// clear out the serv_addr buffer
 	memset((char *) &serv_addr, 0, sizeof(serv_addr));
 	// set up the socket 
 	serv_addr.sin_family = AF_INET;	
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 	//>>>> SOCKET-CLIENT CODE FROM ~/tuts/6-TCP_Comm/client.c >>>>//
 	// n contains how many bytes were received by the server
 	if (n < 0) {
-		error("ERROR writing to socket");
+		error("ERROR writing to socket\n");
 		return 1;
 	}
 	//<<<< SOCKET-CLIENT CODE FROM ~/tuts/6-TCP_Comm/client.c <<<<//
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 	float energy = 0,ax,ay,az,gx,gy,gz;
 	while(1)
 	{
-		//Read sensor data
+		// Read sensor data
 		accel_data = read_accel(accel, a_res);
 		gyro_data = read_gyro(gyro, g_res);
 		ax = accel_data.x;
