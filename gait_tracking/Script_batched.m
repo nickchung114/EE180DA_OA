@@ -7,7 +7,7 @@ addpath('ximu_matlab_library');
 % CONSTANTS
 DEBUG = 1;
 PLOT = 1;
-ANIMATE = 1;
+ANIMATE = 0;
 PERSISTENT_DATA = 1;
 batchSize = 256;
 sampRate = 256;

@@ -18,7 +18,8 @@
 
 #define DEBUG
 
-#define BATCH_SIZE 32
+#define BATCH_SIZE 256
+//#define PACK_SIZE 16 // packet size. Should divide BATCH_SIZE
 #define SAMP_RATE 256
 #define INIT_SEC 2
 #define SAMP_SIZE (3*2) // num dimensions * |{accel,gyro}|
@@ -45,11 +46,13 @@ int main(int argc, char *argv[]) {
   struct hostent *server;
   int flags;
   float buffer[BUFF_NUM][BUFF_SIZE];
+  int total_sent;
 
   int i = 0;
   int j;
   int init_sam = (SAMP_RATE*INIT_SEC)+1;
   int curr_buff = 0, buff_to_write = 0;
+  int quit = 0;
   char stop;
 
   // Read command line arguments, need to get the host IP address and port
@@ -126,24 +129,20 @@ int main(int argc, char *argv[]) {
   printf("STARTING TO COLLECT DATA\n");
 #ifdef DEBUG
   printf("\n\t\tAccelerometer\t\t\t||");
-  printf("\t\t\tGyroscope\t\t\t||");
+  printf("\t\t\tGyroscope\t\t\t\n");
 #endif
 
   while (1) {
     for (j = 0; j < BATCH_SIZE; j++) {
       n = read(client_socket_fd, &stop, 1);
       if (n < 0) {
-	if (errno == EWOULDBLOCK || errno == EAGAIN) {
-#ifdef DEBUG
-	  printf("No stop ping from server\n");
-#endif
-	} else {
+	if (!(errno == EWOULDBLOCK || errno == EAGAIN))
 	  error("ERROR reading from client socket");
-	}
       } else {
 #ifdef DEBUG
 	printf("RECEIVED STOP PING\n");
 #endif
+	quit = 1;
 	break;
       }
       if (i%1000 == 0) printf("%i points\n", i);
@@ -165,7 +164,9 @@ int main(int argc, char *argv[]) {
       
       i++;
     } // batch done
-      
+
+    if (quit) break;
+
     // write batch to server
     n = write(client_socket_fd, buffer[buff_to_write], BUFF_SIZE*sizeof(float));
     // n contains how many bytes were received by the server
@@ -175,12 +176,18 @@ int main(int argc, char *argv[]) {
     //     http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
     if (n < 0) {
       if (errno == EWOULDBLOCK || errno == EAGAIN) {
+	if (((curr_buff+1)%BUFF_NUM) == buff_to_write) {
+	  // went around ring buffer. panic!
+	  fprintf(stderr, "Ring buffer is full. Abort!\n");
+	  exit(1);
+	}
 	curr_buff = (curr_buff+1)%BUFF_NUM;
 	fprintf(stderr, "FAILED WRITE for %d. Now on buffer %d", buff_to_write, curr_buff);
       } else {
 	error("ERROR writing to socket");
       }
     } else { // successful write
+      if (n < (BUFF_SIZE*sizeof(float))) printf("ASDF\n");
       if (buff_to_write != curr_buff)
 	buff_to_write = (buff_to_write+1)%BUFF_NUM;
     }

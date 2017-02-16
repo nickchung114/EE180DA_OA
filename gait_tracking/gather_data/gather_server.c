@@ -13,9 +13,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#define BATCH_SIZE 32
+//#define PACK_SIZE
+#define BATCH_SIZE 256 // number of rows
 #define MAX_FILES 1
-#define MAX_NUM_FILES 1 // only makes sense if MAX_FILES is 1
+#define MAX_NUM_FILES 5 // only makes sense if MAX_FILES is 1
 #define MAX_BUF 128 // Maximum string size
 #define SAMP_SIZE (3*2) // num dimensions * |{accel,gyro}|
 #define BUFF_SIZE (BATCH_SIZE*SAMP_SIZE) // batch size * sample size
@@ -82,7 +83,8 @@ int main(int argc, char *argv[]) {
   client_socket_fd = accept(server_socket_fd, (struct sockaddr *) &cli_addr, &clilen);
   if (client_socket_fd < 0) {
     error("ERROR on accept");
-  }  
+  }
+  printf("Client connected!\n");
 
   // clear the buffer
   memset(buffer, 0, BUFF_SIZE*sizeof(float));
@@ -96,6 +98,8 @@ int main(int argc, char *argv[]) {
     n = read(client_socket_fd, buffer, BUFF_SIZE*sizeof(float));
     if (n < 0) {
       error("ERROR reading from socket");
+    } else if (n < BUFF_SIZE*sizeof(float)) {
+      printf("FDSA\n");
     }
 
     for (j = 0; j < BATCH_SIZE; j++) {
@@ -104,6 +108,13 @@ int main(int argc, char *argv[]) {
 	      buffer[(j*SAMP_SIZE)+3], buffer[(j*SAMP_SIZE)+4], buffer[(j*SAMP_SIZE)+5]);
 
     }
+    /*
+    j = 0;
+    while (j < BATCH_SIZE) {
+      for (k = 0; k < PACK_SIZE; k++) {
+      j++;
+    }
+    */
 
     printf("Completed file %d\n", file_num);
     fclose(fp);
@@ -115,6 +126,10 @@ int main(int argc, char *argv[]) {
   if (n < 0) {
     error("ERROR pinging client to finish");
   }
+
+  printf("Burning out so client can end gracefully...\n");
+  sleep(2);
+  printf("Done.\n");
   
   close(client_socket_fd);
   close(server_socket_fd);
