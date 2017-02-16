@@ -23,6 +23,7 @@ import csv
 import os
 import subprocess 
 import winsound
+import csv
 #################################################
 ############## VARIABLE DECLARATIONS ############
 #################################################
@@ -100,9 +101,15 @@ def foot_main(my_id):
 		writer = csv.writer(fileName, quoting=csv.QUOTE_ALL)
 		writer.writerow(data)
 		f.close();
-		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
-		# GET THE CURRENT POSITION
 		
+		# GET THE CURRENT POSITION
+		ifile = open('..\..\gait_tracking\currentPosition.csv', "rb")
+		reader = csv.reader(ifile)
+		for row in reader:
+			currentPosition = row
+		for i in xrange(len(currentPosition)):
+			currentPosition[i] = int(currentPosition[i])
+		ifile.close()
 		# if stomped:
 		#	CLASSIFY LOCATION INTO AN INSTRUMENT
 		#	threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
