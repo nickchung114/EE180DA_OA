@@ -17,7 +17,7 @@
 # http://stackoverflow.com/questions/2967194/open-in-python-does-not-create-a-file-if-it-doesnt-exist
 # http://stackoverflow.com/questions/339007/nicest-way-to-pad-zeroes-to-string
 # http://stackoverflow.com/questions/9271464/what-does-the-file-variable-mean-do/9271617#9271617
-
+# https://docs.python.org/2/tutorial/inputoutput.html#reading-and-writing-files
 #####################################################################
 ############################# LIBRARIES #############################
 #####################################################################
@@ -41,7 +41,7 @@ PORT = 5000			# Reserve a port for your service
 EXPECTED_USERS = 1		# Number of users
 FOOT_MSG_PAD = 18		# 15 + 3 (negative & zero & decimal)
 FOOT_MSG_LEN = FOOT_MSG_PAD*6 + 1 + 2*6 + 1	# The last byte is newline
-COUNTER_MAX = 256
+MAX_NUM_SAMPLES = 256
 
 hIDtoSocket = {}
 fIDtoSocket = {}
@@ -111,9 +111,11 @@ def foot_main(my_id):
 	writePath = os.path.join(dir, 'csv', fileName)
 	print 'Writing to',writePath
 	f = open(writePath,'a+')
-	writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+	#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+	writer = csv.writer(f)
 	
 	test_counter = 0
+	NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*2
 	Note_old = 0
 	
 	#p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
@@ -123,8 +125,8 @@ def foot_main(my_id):
 		data = fIDtoSocket[my_id].recv(FOOT_MSG_LEN)
 		# print 'Data I received:', data	# WEEDLE
 		test_counter += 1
-		if test_counter > COUNTER_MAX:
-			print 'Finished',str(COUNTER_MAX),'iterations'
+		if test_counter > NUM_ITERATIONS_FOR_TESTING:
+			print 'Finished',str(NUM_ITERATIONS_FOR_TESTING),'iterations'
 			break
 		#"""
 		try:
@@ -136,23 +138,25 @@ def foot_main(my_id):
 			print '\n\n\n\n~~~'
 			break
 		#print [repr(d) for d in data]	# WEEDLE
-		print data
+		#print data
 		#"""
 		
 		# STORE INFORMATION INTO A .csv FILE
-		if counter >= COUNTER_MAX:
+		if counter >= MAX_NUM_SAMPLES:
 			print 'Closing',writePath
 			f.close()
 			# originally str(currFileInd)
+			currFileInd = (currFileInd + 1) % 100
 			fileName = ''.join(['batch',chr(my_id+65),'{0:02d}'.format(currFileInd),'_CalInertialAndMag.csv'])
 			writePath = os.path.join(dir, 'csv', fileName)
 			print 'Writing to',writePath
-			f = open(writePath,'a+')
-			writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+			f = open(writePath,'w+b')
+			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+			writer = csv.writer(f)
 			counter = 0
-			currFileInd = (currFileInd + 1) % 100
 		writer.writerow(data)
 		counter += 1
+		print counter
 		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
 		# GET THE CURRENT POSITION
 		
