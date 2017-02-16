@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 	// BEGIN INFINITE LOOP FOR SENDING DATA TO SERVER
 	int stomp = 0, stompLastPlayed = 0;
 	float energy = 0,ax,ay,az,gx,gy,gz;
+	char *data;
 	while(1)
 	{
 		// Read sensor data
@@ -131,8 +132,12 @@ int main(int argc, char *argv[])
 			stomp = 1;
 			stompLastPlayed = 20;
 		}
-		printf("%f, %f, %f, %f, %f, %f\n", ax, ay, az, gx, gy, gz);
-		dprintf(client_socket_fd,"%f\n",ax);
+		if(asprintf(&data,"%d, %18.15lf, %18.15lf, %18.15lf, %18.15lf, %18.15lf, %18.15lf\n",stomp,ax,ay,az,gx,gy,gz) < 0)
+		{
+			error("Did not make string properly.\n");
+		}
+		printf(data); //WEEDLE
+		dprintf(client_socket_fd,data);
 		printf("wrote to server\n");
 		if(stompLastPlayed > 0)
 		{
