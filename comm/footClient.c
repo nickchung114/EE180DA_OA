@@ -133,7 +133,13 @@ int main(int argc, char *argv[])
 	
 	// BEGIN INFINITE LOOP FOR SENDING DATA TO SERVER
 	int stomp = 0, stompLastPlayed = 0;
-	float energy = 0,ax,ay,az,gx,gy,gz;
+	float energy[50];
+	int i = 0;
+	for(i = 49; i >= 0; i--)
+	{
+			energy[i] = 0;
+	}
+	float ax,ay,az,gx,gy,gz;
 	while(1)
 	{
 		//Read sensor data
@@ -145,13 +151,23 @@ int main(int argc, char *argv[])
 		gx = gyro_data.x - gyro_offset.x;
 		gy = gyro_data.y - gyro_offset.y;
 		gz = gyro_data.z - gyro_offset.z;
+		
+		int min = 1;
+		for(i = 49; i > 0; i--)
+		{
+			energy[i] = energy[i-1];
+			if(energy[i] < min)
+				min = energy[i];
+		}
 
-		energy = sqrt(ax*ax + ay*ay + az*az);
+		energy[0] = sqrt(ax*ax + ay*ay + az*az);
 		stomp = 0;
-		if(energy > 3 && stompLastPlayed == 0)
+		
+		if(energy[0] - min > 3.2 && stompLastPlayed == 0)
 		{
 			stomp = 1;
-			stompLastPlayed = 20;
+			printf("Stomp with energy %f\n",energy[0]);
+			stompLastPlayed = 25;
 		}
 		printf("%f, %f, %f, %f, %f, %f, %f\n",stomp,ax,ay,az,gx,gy,gz);
 		dprintf(client_socket_fd,"%f, %f, %f, %f, %f, %f, %f\n",stomp,ax,ay,az,gx,gy,gz);
