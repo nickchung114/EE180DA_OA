@@ -6,7 +6,8 @@ addpath('ximu_matlab_library');
 
 % CONSTANTS
 DEBUG = 1;
-PLOT = 1;
+RT = 1;
+PLOT = 0;
 ANIMATE = 0;
 PERSISTENT_DATA = 1;
 batchSize = 256;
@@ -44,12 +45,12 @@ currentVelocity = zeros(1,3);
 % -------------------------------------------------------------------------
 % Select dataset (comment in/out)
 
-filePath = 'split_files_256/straightLine';
+%filePath = 'split_files_256/straightLine';
 %filePath = 'split_files_1024/straightLine';
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
-%filePath = 'data_2017-02-09_17-52-11/data';
+filePath = 'data_2017-02-09_17-52-11/data';
 
 %filePath = 'Datasets/stairsAndCorridor';
 
@@ -76,13 +77,12 @@ hdl.states = 0;
 
 AHRSalgorithm = AHRS('SamplePeriod', 1/sampRate, 'Kp', 1, 'KpInit', 1);
 
-%while (~DEBUG || (DEBUG && (currentFile <= maxFile)))
 while (1)
     currentFilePath = strcat(filePath, num2str(currentFile,'%.2i'));
 
     % gather batchSize data points from next file
     fileName = strcat(currentFilePath, '_CalInertialAndMag.csv');
-    if (DEBUG)
+    if (~RT)
         if (~(exist(fileName, 'file') == 2))
             break
         end
@@ -109,7 +109,9 @@ while (1)
     
     % *** TODO: IMPLEMENT THIS FILE DELETION ONCE THINGS WORK
     % clear file
-    %delete(currentFilePath);
+%     if (~PERSISTENT_DATA)
+%         delete(currentFilePath);
+%     end
     
     len = length(time);
     % assert len <= batchSize
