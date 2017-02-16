@@ -8,7 +8,7 @@ addpath('ximu_matlab_library');
 PLOTLY = 1;
 DEBUG = 1;
 RT = 1;
-PERSISTENT = 1;
+PERSISTENT = 0;
 PLOT = 1;
 ANIMATE = 0;
 batchSize = 256;
@@ -19,6 +19,7 @@ initSteps = 2000; % 2000 steps for initial AHRS convergence
 stationaryThresh = 0.005;
 msg = 0;
 numSamples = 0;
+plotlyPeriod = 32;
 
 % PLOTLY SETUP
 if (RT && PLOTLY)
@@ -32,7 +33,7 @@ if (RT && PLOTLY)
     data{1}.y = [];
     data{1}.type = 'scatter';
     data{1}.stream.token = my_stream_token;
-    data{1}.stream.maxpoints = 256*5;
+    data{1}.stream.maxpoints = 500;
     args.filename = 'CURRENT_POSITION';
     args.fileopt = 'overwrite';
 
@@ -47,6 +48,12 @@ if (RT && PLOTLY)
     %----open the stream----%
 
     ps.open();
+end
+
+for i=1:500 % reset plotly plot
+    mydata.x = 0;
+    mydata.y = 0;
+    ps.write(mydata);
 end
 
 % for visualization (NOT REAL-TIME)
@@ -82,7 +89,7 @@ currentVelocity = zeros(1,3);
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
-filePath = 'data_2017-02-16_02-24-50/data';
+filePath = 'data_2017-02-16_11-52-10/data';
 
 %filePath = 'Datasets/stairsAndCorridor';
 
@@ -129,8 +136,8 @@ while (1)
                 fprintf('Waiting for file: %s\n', fileName);
                 msg = 1;
             end
-            fprintf('.');
             pause(1); % check 4 times per second
+            fprintf('.');
             [s,w] = system(sprintf('wc -l %s', fileName));
             wNum = w-'0';
             lineCount = str2double(w(1:find(diff(wNum >= 0 & wNum < 10) == -1, 1)));
@@ -368,18 +375,20 @@ while (1)
         pos = zeros(size(vel));
         if (size(vel,1) > 0)
             pos(1,:) = currentPosition + vel(1,:) * samplePeriod;
-            if (RT && PLOTLY)
+            numSamples = numSamples+1;
+            if (RT && PLOTLY && mod(numSamples,plotlyPeriod)==0)
                 mydata.x = pos(1,1);
                 mydata.y = pos(1,2);
                 ps.write(mydata);
             end
             for t = 2:length(pos)
                 pos(t,:) = pos(t-1,:) + vel(t,:) * samplePeriod;    % integrate velocity to yield position
-                if (RT && PLOTLY)
+                if (RT && PLOTLY && mod(numSamples,plotlyPeriod)==0)
                     mydata.x = pos(t,1);
                     mydata.y = pos(t,2);
                     ps.write(mydata);
                 end
+                numSamples = numSamples+1;
             end
             currentPosition = pos(end,:);
         end
@@ -393,7 +402,6 @@ while (1)
             runningAcc = [runningAcc; [accX accY accZ]];
             runningFilt = [runningFilt; acc_magFilt];
         end
-        numSamples = numSamples + size(pos,1);
     end
     
     if (~initDone)
@@ -406,11 +414,11 @@ while (1)
     
     csvwrite(mat2pyFilename,currentPosition);
     
-%     if (RT && PLOTLY)
-%         mydata.x = currentPosition(1);
-%         mydata.y = currentPosition(2);
-%         ps.write(mydata);
-%     end
+    if (RT && PLOTLY)
+        mydata.x = currentPosition(1);
+        mydata.y = currentPosition(2);
+        ps.write(mydata);
+    end
     
     currentFile = mod((currentFile + 1), bufSize);
 end
