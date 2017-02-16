@@ -2,6 +2,7 @@
 //     Gets data from client
 //     Writes to files in ring buffer manner
 
+// ***** ASSUMES THAT MATLAB USES FILES UP QUICKLY ENOUGH SO RING ISN'T FILLED
 #include <stdio.h>
 
 #include <netinet/in.h>
@@ -20,6 +21,7 @@
 #define SAMP_SIZE (3*2) // num dimensions * |{accel,gyro}|
 #define BUFF_SIZE (BATCH_PTS*SAMP_SIZE) // batch length * sample size
 #define BUFF_BYTES (BUFF_SIZE*sizeof(float)) // size of buffer in bytes
+#define FILE_MAX 100
 
 void error(const char *msg) {
   perror(msg);
@@ -113,14 +115,14 @@ int main(int argc, char *argv[]) {
     }
 
     for (i = 0; i < BATCH_PTS; i++) {
-      fprintf(fp, "%i,%f,%f,%f,%f,%f,%f\n", i+1,
+      fprintf(fp, "%i,%f,%f,%f,%f,%f,%f,0,0,0\n", i+1,
 	      buffer[i*SAMP_SIZE], buffer[(i*SAMP_SIZE)+1], buffer[(i*SAMP_SIZE)+2],
 	      buffer[(i*SAMP_SIZE)+3], buffer[(i*SAMP_SIZE)+4], buffer[(i*SAMP_SIZE)+5]);
     }
     
     printf("Completed file %d\n", file_num);
     fclose(fp);
-    file_num++;
+    file_num = (file_num+1)%FILE_MAX;
   }
 
   // ping client to finish

@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
       gyro_data = read_gyro(gyro, g_res);
 
       if (num_pts%PRINT_PERIOD == 0) {
-	printf("%i points\n", i);
+	printf("%i points\n", num_pts);
 	printf("    send_idx: %d    curr_idx: %d\n", send_idx, curr_idx);
 	printf("    X: %f\t Y: %f\t Z: %f\t||", accel_data.x, accel_data.y, accel_data.z);
 	printf("\tX: %f\t Y: %f\t Z: %f p: %d\t\n", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z, num_pts);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     //     http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
     if (n < 0) {
       if (errno == EWOULDBLOCK || errno == EAGAIN) {
-	fprintf(stderr, "FAILED WRITE for byte %d. Currently at byte %d",
+	fprintf(stderr, "FAILED WRITE for byte %d. Currently at byte %d\n",
 		send_idx, curr_idx);
       } else {
 	error("ERROR writing to socket");

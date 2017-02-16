@@ -5,26 +5,58 @@ addpath('Quaternions');
 addpath('ximu_matlab_library');
 
 % CONSTANTS
+PLOTLY = 1;
 DEBUG = 1;
 RT = 1;
-PLOT = 0;
+PERSISTENT = 1;
+PLOT = 1;
 ANIMATE = 0;
-PERSISTENT_DATA = 1;
 batchSize = 256;
 sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
-stationaryThresh = 0.05;
+stationaryThresh = 0.005;
+msg = 0;
+numSamples = 0;
 
-% for visualization
+% PLOTLY SETUP
+if (RT && PLOTLY)
+    %----STORED STREAMING CREDENTIALS----%
+    my_credentials = loadplotlycredentials;
+    my_stream_token = my_credentials.stream_ids{end};
+
+    %----SETUP-----%
+
+    data{1}.x = [];
+    data{1}.y = [];
+    data{1}.type = 'scatter';
+    data{1}.stream.token = my_stream_token;
+    data{1}.stream.maxpoints = 256*5;
+    args.filename = 'CURRENT_POSITION';
+    args.fileopt = 'overwrite';
+
+    %----PLOTLY-----%
+
+    resp = plotly(data,args);
+    URL_OF_PLOT = resp.url;
+    fprintf('URL: %s\n', URL_OF_PLOT);
+
+    ps = plotlystream(my_stream_token);
+
+    %----open the stream----%
+
+    ps.open();
+end
+
+% for visualization (NOT REAL-TIME)
 runningPos = zeros(0,3);
 runningGyr = zeros(0,3);
 runningAcc = zeros(0,3);
 runningQuat = zeros(0,4);
 runningStationary = zeros(0,1);
 runningVel = zeros(0,3);
-runningFilt = zeros(0,3);
+runningFilt = zeros(0,1);
 
 initCount = 0;
 initDone = 0;
@@ -50,13 +82,13 @@ currentVelocity = zeros(1,3);
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
-filePath = 'data_2017-02-09_17-52-11/data';
+filePath = 'data_2017-02-16_02-24-50/data';
 
 %filePath = 'Datasets/stairsAndCorridor';
 
 %filePath = 'Datasets/spiralStairs';
 
-currentMat2pyFilename = 'currentPositionFile';
+mat2pyFilename = 'currentPosition.csv';
 
 % HPF Stuff
 %filtCutOffHigh = 0.001; % in Hz. Just cut out DC component
@@ -88,7 +120,26 @@ while (1)
         end
     else % ~DEBUG
         % infinite loop until next file is available
-        while (~(exist(fileName, 'file') == 2)) end
+        %while (~(exist(fileName, 'file') == 2))
+        [s,w] = system(sprintf('wc -l %s', fileName));
+        wNum = w-'0';
+        lineCount = str2double(w(1:find(diff(wNum >= 0 & wNum < 10) == -1, 1)));
+        while (~((s == 0) && (lineCount >= batchSize))) % while the file doesn't exist
+            if (DEBUG && ~msg)
+                fprintf('Waiting for file: %s\n', fileName);
+                msg = 1;
+            end
+            fprintf('.');
+            pause(1); % check 4 times per second
+            [s,w] = system(sprintf('wc -l %s', fileName));
+            wNum = w-'0';
+            lineCount = str2double(w(1:find(diff(wNum >= 0 & wNum < 10) == -1, 1)));
+        end
+        fprintf('\n');
+        if (DEBUG)
+            fprintf('Found file: %s\n', fileName);
+            msg = 0;
+        end
     end
     
     % -------------------------------------------------------------------------
@@ -107,16 +158,19 @@ while (1)
     
     clear('xIMUdata');
     
-    % *** TODO: IMPLEMENT THIS FILE DELETION ONCE THINGS WORK
     % clear file
-%     if (~PERSISTENT_DATA)
-%         delete(currentFilePath);
-%     end
+    if (RT && ~PERSISTENT)
+        delete(fileName);
+    end
     
     len = length(time);
     % assert len <= batchSize
     if (len > batchSize)
         fprintf('WARNING: the length of this frame is longer that the expected batch size. Consider revising the code that creates the frame files\n');
+    end
+    % if real-time, assert len = batchsize
+    if (RT && (len < batchSize))
+        fprintf('WARNING: you are running in real-time and your frame is shorter than the expected batch size. Consider revising the code, as it should have prevented the program from reaching this spot.\n');
     end
     
     % Initial convergence
@@ -218,7 +272,6 @@ while (1)
         acc = quaternRotate([accX accY accZ], quaternConj(quat));
 
         % % Remove gravity from measurements
-        % *** TODO: should we bring this back...?
         % acc = acc - [zeros(length(time), 2) ones(length(time), 1)];     % unnecessary due to velocity integral drift compensation
 
         % Convert acceleration measurements to m/s/s
@@ -240,7 +293,6 @@ while (1)
         % Compute translational velocities
 
         % cursory gravity subtraction...?
-        % *** TODO: Should we change this?
         acc(:,3) = acc(:,3) - 9.81;
 
         % Integrate acceleration to yield velocity
@@ -316,19 +368,32 @@ while (1)
         pos = zeros(size(vel));
         if (size(vel,1) > 0)
             pos(1,:) = currentPosition + vel(1,:) * samplePeriod;
+            if (RT && PLOTLY)
+                mydata.x = pos(1,1);
+                mydata.y = pos(1,2);
+                ps.write(mydata);
+            end
             for t = 2:length(pos)
                 pos(t,:) = pos(t-1,:) + vel(t,:) * samplePeriod;    % integrate velocity to yield position
+                if (RT && PLOTLY)
+                    mydata.x = pos(t,1);
+                    mydata.y = pos(t,2);
+                    ps.write(mydata);
+                end
             end
             currentPosition = pos(end,:);
         end
 
-        runningVel = [runningVel; vel];
-        runningPos = [runningPos; pos];
-        runningQuat = [runningQuat; quat];
-        runningStationary = [runningStationary; stationary];
-        runningGyr = [runningGyr; [gyrX gyrY gyrZ]];
-        runningAcc = [runningAcc; [accX accY accZ]];
-        runningFilt = [runningFilt; acc_magFilt];
+        if (~RT)
+            runningVel = [runningVel; vel];
+            runningPos = [runningPos; pos];
+            runningQuat = [runningQuat; quat];
+            runningStationary = [runningStationary; stationary];
+            runningGyr = [runningGyr; [gyrX gyrY gyrZ]];
+            runningAcc = [runningAcc; [accX accY accZ]];
+            runningFilt = [runningFilt; acc_magFilt];
+        end
+        numSamples = numSamples + size(pos,1);
     end
     
     if (~initDone)
@@ -336,11 +401,17 @@ while (1)
     end
     
     if (DEBUG)
-        fprintf('After File %d: %f %f %f at %i samples\n', currentFile, currentPosition(end,1), currentPosition(end,2), currentPosition(end,3), size(runningPos,1));
+        fprintf('After File %d: %f %f %f at %i samples\n', currentFile, currentPosition(1), currentPosition(2), currentPosition(3), numSamples);
     end
     
-    currentMat2pyFilename = strcat('currentPositionFile', num2str(currentFile,'%.2i'));
-    csvwrite(currentMat2pyFilename,currentPosition(end,:)); 
+    csvwrite(mat2pyFilename,currentPosition);
+    
+%     if (RT && PLOTLY)
+%         mydata.x = currentPosition(1);
+%         mydata.y = currentPosition(2);
+%         ps.write(mydata);
+%     end
+    
     currentFile = mod((currentFile + 1), bufSize);
 end
 
