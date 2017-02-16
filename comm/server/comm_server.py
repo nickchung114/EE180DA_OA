@@ -1,3 +1,4 @@
+
 # WEEDLE is for debugging :)
 
 #################
@@ -21,7 +22,7 @@ import collections	# for Counter()
 import csv
 import os
 import subprocess 
-
+import winsound
 #################################################
 ############## VARIABLE DECLARATIONS ############
 #################################################
@@ -71,6 +72,7 @@ def foot_main(my_id):
 	print 'Starting foot_main with client ID', my_id	# WEEDLE
 	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
 	currFileInd = 0; 
+	Note_old = 0
 	p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
 
 	while True:
@@ -81,6 +83,11 @@ def foot_main(my_id):
 		# FIGURE OUT HOW TO GET THE SIX INTS OUT FROM DATA
 		# ax is a string 
 		# data = strcat(ax,',',ay,',',az,',',gx,',',gy,',',gz,',',mx,',',my,',',mz)
+		
+		#Try this; data list_should be an array of numbers:
+		#data = fIDtoSocket[my_id].recv(1024)
+		#aux = data.split(,)
+		#data_list = [int(e) for e in aux]
 		
 		# STORE INFORMATION INTO A .csv FILE
 		fileName = ''.join(['batch',str(currFileInd),'_CalInertialAndMag.csv'])
@@ -98,7 +105,7 @@ def foot_main(my_id):
 		
 		# if stomped:
 		#	CLASSIFY LOCATION INTO AN INSTRUMENT
-		#	threading.Thread(target=hand_main,args=(my_id,instrument,)).start()
+		#	threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
 	print 'Exiting foot_main with client ID ', my_id	# WEEDLE
 	
 #################################################

@@ -38,7 +38,7 @@ void error(const char *msg)
  */
 int main(int argc, char *argv[])
 {
-	//fflush(stdout);
+	fflush(stdout);
 	
 	//>>>> IMU CODE FROM ~/tuts/7-imu/EXAMPLE.C >>>>//
 	// set up imu
