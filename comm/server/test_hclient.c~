@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	if (connect(client_socket_fd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){ 
 		error("ERROR connecting");
 	}
-	printf("connected. trying to write...\n");
+	printf("connected. trying to write.\n");
 	// send user input to the server
 	uint8_t x = 0x00;
 	n = write(client_socket_fd,&x,2);

@@ -13,12 +13,13 @@
 #include <time.h>
 #include <unistd.h>
 
-#define BATCH_SIZE 32
-#define MAX_FILES 1
-#define MAX_NUM_FILES 1 // only makes sense if MAX_FILES is 1
+#define BATCH_PTS 256 // num pts per batch (ie: pts per file)
+#define MAX_FILES 0 // flag of whether to put limit on number of files
+#define MAX_NUM_FILES 10 // only makes sense if MAX_FILES is 1
 #define MAX_BUF 128 // Maximum string size
 #define SAMP_SIZE (3*2) // num dimensions * |{accel,gyro}|
-#define BUFF_SIZE (BATCH_SIZE*SAMP_SIZE) // batch size * sample size
+#define BUFF_SIZE (BATCH_PTS*SAMP_SIZE) // batch length * sample size
+#define BUFF_BYTES (BUFF_SIZE*sizeof(float)) // size of buffer in bytes
 
 void error(const char *msg) {
   perror(msg);
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]) {
   struct tm *now = localtime(&t);
   char file_name[MAX_BUF];
 
-  int j;
+  int i, tot;
   int file_num = 0;
   char dummy = 0x00;
   FILE *fp;
@@ -82,29 +83,41 @@ int main(int argc, char *argv[]) {
   client_socket_fd = accept(server_socket_fd, (struct sockaddr *) &cli_addr, &clilen);
   if (client_socket_fd < 0) {
     error("ERROR on accept");
-  }  
+  }
+  printf("Client connected!\n");
 
   // clear the buffer
-  memset(buffer, 0, BUFF_SIZE*sizeof(float));
+  memset(buffer, 0, BUFF_BYTES);
 
   while ((!MAX_FILES) || (MAX_FILES && file_num < MAX_NUM_FILES)) {
     sprintf(file_name, "%s/data%02d_CalInertialAndMag.csv",
 	    dir_name, file_num);
     fp = fopen(file_name, "w");
 
-    // read what the client sent to the server and store it in "buffer"
-    n = read(client_socket_fd, buffer, BUFF_SIZE*sizeof(float));
-    if (n < 0) {
-      error("ERROR reading from socket");
+    /* // read what the client sent to the server and store it in "buffer" */
+    /* n = read(client_socket_fd, buffer, BUFF_SIZE*sizeof(float)); */
+    /* if (n < 0) { */
+    /*   error("ERROR reading from socket"); */
+    /* } else if (n < BUFF_SIZE*sizeof(float)) { */
+    /*   printf("FDSA\n"); */
+    /* } */
+    
+    // read in a batch's worth of data (ie: a file)
+    tot = 0; // number of bytes read so far
+    while (tot < BUFF_BYTES) {
+      n = read(client_socket_fd, ((char*)buffer)+tot, BUFF_BYTES-tot);
+      if (n < 0) {
+	error("ERROR reading from socket");
+      }
+      tot += n;
     }
 
-    for (j = 0; j < BATCH_SIZE; j++) {
-      fprintf(fp, "%i,%f,%f,%f,%f,%f,%f\n", j+1,
-	      buffer[j*SAMP_SIZE], buffer[(j*SAMP_SIZE)+1], buffer[(j*SAMP_SIZE)+2],
-	      buffer[(j*SAMP_SIZE)+3], buffer[(j*SAMP_SIZE)+4], buffer[(j*SAMP_SIZE)+5]);
-
+    for (i = 0; i < BATCH_PTS; i++) {
+      fprintf(fp, "%i,%f,%f,%f,%f,%f,%f\n", i+1,
+	      buffer[i*SAMP_SIZE], buffer[(i*SAMP_SIZE)+1], buffer[(i*SAMP_SIZE)+2],
+	      buffer[(i*SAMP_SIZE)+3], buffer[(i*SAMP_SIZE)+4], buffer[(i*SAMP_SIZE)+5]);
     }
-
+    
     printf("Completed file %d\n", file_num);
     fclose(fp);
     file_num++;
@@ -115,6 +128,10 @@ int main(int argc, char *argv[]) {
   if (n < 0) {
     error("ERROR pinging client to finish");
   }
+
+  printf("Burning out so client can end gracefully...\n");
+  sleep(2);
+  printf("Done.\n");
   
   close(client_socket_fd);
   close(server_socket_fd);

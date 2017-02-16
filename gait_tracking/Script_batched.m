@@ -6,16 +6,16 @@ addpath('ximu_matlab_library');
 
 % CONSTANTS
 DEBUG = 1;
-PLOT = 1;
-ANIMATE = 1;
+RT = 1;
+PLOT = 0;
+ANIMATE = 0;
 PERSISTENT_DATA = 1;
 batchSize = 256;
 sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
-stationaryThresh = .05; % This shouldn't be too low or the algo won't think a step ever happened
-%stationaryThresh = 0.005;
+stationaryThresh = 0.05;
 
 % for visualization
 runningPos = zeros(0,3);
@@ -56,6 +56,8 @@ filePath = 'data_2017-02-09_17-52-11/data';
 
 %filePath = 'Datasets/spiralStairs';
 
+currentMat2pyFilename = 'currentPositionFile';
+
 % HPF Stuff
 %filtCutOffHigh = 0.001; % in Hz. Just cut out DC component
 filtCutOffHigh = 5; % needs to be higher for df1 to work...?
@@ -75,13 +77,12 @@ hdl.states = 0;
 
 AHRSalgorithm = AHRS('SamplePeriod', 1/sampRate, 'Kp', 1, 'KpInit', 1);
 
-%while (~DEBUG || (DEBUG && (currentFile <= maxFile)))
 while (1)
     currentFilePath = strcat(filePath, num2str(currentFile,'%.2i'));
 
     % gather batchSize data points from next file
     fileName = strcat(currentFilePath, '_CalInertialAndMag.csv');
-    if (DEBUG)
+    if (~RT)
         if (~(exist(fileName, 'file') == 2))
             break
         end
@@ -108,7 +109,9 @@ while (1)
     
     % *** TODO: IMPLEMENT THIS FILE DELETION ONCE THINGS WORK
     % clear file
-    %delete(currentFilePath);
+%     if (~PERSISTENT_DATA)
+%         delete(currentFilePath);
+%     end
     
     len = length(time);
     % assert len <= batchSize
@@ -336,6 +339,8 @@ while (1)
         fprintf('After File %d: %f %f %f at %i samples\n', currentFile, currentPosition(end,1), currentPosition(end,2), currentPosition(end,3), size(runningPos,1));
     end
     
+    currentMat2pyFilename = strcat('currentPositionFile', num2str(currentFile,'%.2i'));
+    csvwrite(currentMat2pyFilename,currentPosition(end,:)); 
     currentFile = mod((currentFile + 1), bufSize);
 end
 

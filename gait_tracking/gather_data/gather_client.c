@@ -16,14 +16,19 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define DEBUG
+//#define DEBUG
 
-#define BATCH_SIZE 32
+// point := sample
+//#define BATCH_PTS 256 // num pts per batch (ie: pts per file)
+#define PACK_PTS 16 // number of pts per packet. Should divide BATCH_PTS
 #define SAMP_RATE 256
 #define INIT_SEC 2
 #define SAMP_SIZE (3*2) // num dimensions * |{accel,gyro}|
-#define BUFF_SIZE (BATCH_SIZE*SAMP_SIZE) // batch size * sample size
-#define BUFF_NUM 10 // Size of buffer of buffers b/c non-blocking I/O
+#define PACK_NUM 10 // Size of buffer of packets b/c non-blocking I/O
+#define PACK_SIZE (PACK_PTS*SAMP_SIZE)
+#define BUFF_SIZE (PACK_NUM*PACK_SIZE)
+#define BUFF_BYTES (BUFF_SIZE*sizeof(float)) // size of buffer in bytes
+#define PRINT_PERIOD 1024
 
 void error(const char *msg) {
   perror(msg);
@@ -35,22 +40,22 @@ int main(int argc, char *argv[]) {
   data_t gyro_offset;
   float a_res, g_res;
   mraa_i2c_context accel, gyro;
-  //accel_scale_t a_scale = A_SCALE_4G;
   accel_scale_t a_scale = A_SCALE_8G;
-  //gyro_scale_t g_scale = G_SCALE_245DPS;
   gyro_scale_t g_scale = G_SCALE_2000DPS;
 
   int client_socket_fd, portno, n;
   struct sockaddr_in serv_addr;
   struct hostent *server;
   int flags;
-  float buffer[BUFF_NUM][BUFF_SIZE];
+  float buffer[BUFF_SIZE];
+  int send_idx = 0, curr_idx = 0;
+  int next_it, send_it, curr_it; // helper variables for converting idx (byte) to it (float)
 
-  int i = 0;
-  int j;
-  int init_sam = (SAMP_RATE*INIT_SEC)+1;
-  int curr_buff = 0, buff_to_write = 0;
-  char stop;
+  int num_pts = 0;
+  int i;
+  int init_sam = (SAMP_RATE*INIT_SEC)+1; // number of samples during init period
+  int quit = 0; // quit flag
+  char stop; // dummy buffer for stop ping
 
   // Read command line arguments, need to get the host IP address and port
   if (argc < 3) {
@@ -101,10 +106,8 @@ int main(int argc, char *argv[]) {
     error("ERROR setting socket to non-blocking");
   }
 
-#ifdef DEBUG
   printf("Socket connected to server!\n");
   printf("Now beginning sensor initialization\n");
-#endif
   
   // initialize sensors, set scale, and calculate resolution.
   accel = accel_init();
@@ -117,74 +120,93 @@ int main(int argc, char *argv[]) {
 	
   gyro_offset = calc_gyro_offset(gyro, g_res);
 
-#ifdef DEBUG
   printf("GYRO OFFSETS x: %f y: %f z: %f\n",
 	 gyro_offset.x, gyro_offset.y, gyro_offset.z);
-#endif
 
   //Read the sensor data and print them.
   printf("STARTING TO COLLECT DATA\n");
-#ifdef DEBUG
-  printf("\n\t\tAccelerometer\t\t\t||");
-  printf("\t\t\tGyroscope\t\t\t||");
-#endif
+  printf("\n    \t\tAccelerometer\t\t\t||");
+  printf("\t\t\tGyroscope\t\t\t\n");
 
   while (1) {
-    for (j = 0; j < BATCH_SIZE; j++) {
+    for (i = 0; i < PACK_PTS; i++) {
       n = read(client_socket_fd, &stop, 1);
       if (n < 0) {
-	if (errno == EWOULDBLOCK || errno == EAGAIN) {
-#ifdef DEBUG
-	  printf("No stop ping from server\n");
-#endif
-	} else {
+	if (!(errno == EWOULDBLOCK || errno == EAGAIN))
 	  error("ERROR reading from client socket");
-	}
+	// else no stop ping yet
       } else {
 #ifdef DEBUG
 	printf("RECEIVED STOP PING\n");
 #endif
+	quit = 1;
 	break;
       }
-      if (i%1000 == 0) printf("%i points\n", i);
-      if (i == init_sam) printf("INITIALIZATION PERIOD DONE\n");
+
+      if (num_pts == init_sam) printf("INITIALIZATION PERIOD DONE\n");
       accel_data = read_accel(accel, a_res);
       gyro_data = read_gyro(gyro, g_res);
 
+      if (num_pts%PRINT_PERIOD == 0) {
+	printf("%i points\n", i);
+	printf("    send_idx: %d    curr_idx: %d\n", send_idx, curr_idx);
+	printf("    X: %f\t Y: %f\t Z: %f\t||", accel_data.x, accel_data.y, accel_data.z);
+	printf("\tX: %f\t Y: %f\t Z: %f p: %d\t\n", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z, num_pts);
+      }
+
 #ifdef DEBUG
       printf("X: %f\t Y: %f\t Z: %f\t||", accel_data.x, accel_data.y, accel_data.z);
-      printf("\tX: %f\t Y: %f\t Z: %f p: %d\t\n", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z, i);
+      printf("\tX: %f\t Y: %f\t Z: %f p: %d\t\n", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z, num_pts);
 #endif
 
-      buffer[curr_buff][j*SAMP_SIZE] = gyro_data.x - gyro_offset.x;
-      buffer[curr_buff][(j*SAMP_SIZE)+1] = gyro_data.y - gyro_offset.y;
-      buffer[curr_buff][(j*SAMP_SIZE)+2] = gyro_data.z - gyro_offset.z;
-      buffer[curr_buff][(j*SAMP_SIZE)+3] = accel_data.x;
-      buffer[curr_buff][(j*SAMP_SIZE)+4] = accel_data.y;
-      buffer[curr_buff][(j*SAMP_SIZE)+5] = accel_data.z;
+      curr_it = curr_idx/sizeof(float);
+      buffer[curr_it] = gyro_data.x - gyro_offset.x;
+      buffer[curr_it+1] = gyro_data.y - gyro_offset.y;
+      buffer[curr_it+2] = gyro_data.z - gyro_offset.z;
+      buffer[curr_it+3] = accel_data.x;
+      buffer[curr_it+4] = accel_data.y;
+      buffer[curr_it+5] = accel_data.z;
       
-      i++;
+      num_pts++;
+      next_it = (curr_it + SAMP_SIZE)%BUFF_SIZE;
+      send_it = send_idx/sizeof(float); // truncate integer
+      if ((next_it >= send_it) &&
+	  (next_it <= (send_it+SAMP_SIZE-1))) {
+	// note that curr_idx always advances SAMP_SIZE at a time
+	// went around ring buffer. panic!
+	fprintf(stderr, "Ring buffer is full. Abort!\n");
+	exit(1);
+      }
+      curr_idx = next_it*sizeof(float);
     } // batch done
-      
+
+    // stop writing packets if received stop ping
+    if (quit) break;
+
     // write batch to server
-    n = write(client_socket_fd, buffer[buff_to_write], BUFF_SIZE*sizeof(float));
-    // n contains how many bytes were received by the server
+    n = write(client_socket_fd, ((char*)buffer)+send_idx,
+	      ((curr_idx>send_idx)?
+	       (curr_idx-send_idx):
+	       (BUFF_BYTES-send_idx)));
+    // n contains how many bytes were written to the socket
     // if n is less than 0, then there was an error
     // Refer to:
     //     http://stackoverflow.com/questions/3153939/properly-writing-to-a-nonblocking-socket-in-c
     //     http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
     if (n < 0) {
       if (errno == EWOULDBLOCK || errno == EAGAIN) {
-	curr_buff = (curr_buff+1)%BUFF_NUM;
-	fprintf(stderr, "FAILED WRITE for %d. Now on buffer %d", buff_to_write, curr_buff);
+	fprintf(stderr, "FAILED WRITE for byte %d. Currently at byte %d",
+		send_idx, curr_idx);
       } else {
 	error("ERROR writing to socket");
       }
     } else { // successful write
-      if (buff_to_write != curr_buff)
-	buff_to_write = (buff_to_write+1)%BUFF_NUM;
+      send_idx = (send_idx+n)%BUFF_BYTES;
     }
-
+    
+#ifdef DEBUG
+    printf("send_idx: %d    curr_idx: %d\n", send_idx, curr_idx);
+#endif
     usleep(1000000/SAMP_RATE);
   }
 
