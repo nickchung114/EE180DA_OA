@@ -48,11 +48,7 @@ fIDtoSocket = {}
 dict_rm_ws = {'\\n' : '', '\n' : '', '\r\n' : '', ' ' : ''}
 
 dir = os.path.abspath(os.path.dirname('__file__'))
-
-#Here, include the path to your bat file
-batpath = "C:\\Users\\gabri\\Documents\\180DA\\"     
-#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
-
+   
 #####################################################################
 ####################### FUNCTION DECLARATIONS #######################
 #####################################################################
@@ -118,7 +114,9 @@ def foot_main(my_id):
 	NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*2
 	Note_old = 0
 	
-	#p = subprocess.Popen("testingpy2mat.bat", cwd=batpath, shell=True)
+	p = subprocess.Popen("testingpy2mat.bat", shell=True)
+	#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
+
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
