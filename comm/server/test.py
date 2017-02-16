@@ -29,3 +29,8 @@ def multireplace(string, replacements):
 str = '\\na\nb\r\nc d'
 dict = {'\\n' : '', '\n' : '', '\r\n' : '', ' ' : ''}
 print multireplace(str,dict)
+
+list = [1,2,3,4,5]
+counter = 0
+A = [counter] + list[1:]
+print A

@@ -152,12 +152,12 @@ def foot_main(my_id):
 			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
 			writer = csv.writer(f)
 			counter = 0
-		writer.writerow(data)
+		writer.writerow([counter] + data[1:] + [0,0,0])
 		counter += 1
 		print counter
 		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
 		# GET THE CURRENT POSITION
-		ifile = open('..\..\gait_tracking\currentPosition.csv', "rb")
+		ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
 		reader = csv.reader(ifile)
 		for row in reader:
 			currentPosition = row
