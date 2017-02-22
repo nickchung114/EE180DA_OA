@@ -95,7 +95,7 @@ filePath = 'data_2017-02-16_11-52-10/data';
 
 %filePath = 'Datasets/spiralStairs';
 
-mat2pyFilename = 'currentPosition.csv';
+mat2pyFilename = '../comm/server/csv/currentPosition.csv';
 
 % HPF Stuff
 %filtCutOffHigh = 0.001; % in Hz. Just cut out DC component
