@@ -155,14 +155,13 @@ def foot_main(my_id):
 		writer.writerow([counter] + data[1:] + [0,0,0])
 		counter += 1
 		print counter
-		# TELL MATLAB TO PROCESS THE INFORMATION EVERY T SECONDS
 		# GET THE CURRENT POSITION
 		ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
 		reader = csv.reader(ifile)
 		for row in reader:
 			currentPosition = row
 		for i in xrange(len(currentPosition)):
-			currentPosition[i] = int(currentPosition[i])
+			currentPosition[i] = float(currentPosition[i])
 		ifile.close()
 		# if stomped:
 		#	CLASSIFY LOCATION INTO AN INSTRUMENT
