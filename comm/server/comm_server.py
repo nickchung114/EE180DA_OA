@@ -82,7 +82,7 @@ def compare_hashable_lists(s,t):
 # establish a listener
 # block/wait
 # play a sound based on (instrument, note)
-def hand_main(my_id, instrument, Note_old) # will need to add a variable Note_old to foot_main.
+def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_old to foot_main.
 	print 'Starting hand_main with client ID', my_id	# WEEDLE
 	# SEND AN INTERRUPT
 	hIDtoSocket[my_id].send('ahem')
@@ -99,10 +99,10 @@ def hand_main(my_id, instrument, Note_old) # will need to add a variable Note_ol
                 'French_c.wav','French_d.wav','French_e.wav','French_f.wav','French_g.wav',
                 'Guitar_C.wav','Guitar_d.wav','Guitar_e.wav','Guitar_f.wav','Guitar_g.wav',
                 'Violin_c.wav','Violin_d.wav','Violin_e.wav','Violin_f.wav','Violin_g.wav']
-	if Note_old is < 11 or Note_old > 15 #Stop playing the previous note if it is a wind or instrument or violin.
-		winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME  winsound.SND_PURGE))
+	if Note_old < 11 or Note_old > 15: #Stop playing the previous note if it is a wind or instrument or violin.
+		winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME | winsound.SND_PURGE))
 	Note = pitch + 5*instrument
-	winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME  winsound.SND_ASYNC))
+	winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME | winsound.SND_ASYNC))
 	conn.sendall(bytes('Word', 'UTF-8'))
 	Note_old = Note
 	print 'Exiting hand_main with client ID', my_id	# WEEDLE
@@ -172,18 +172,19 @@ def foot_main(my_id):
 		writer.writerow([counter] + data[1:] + [0,0,0])
 		counter += 1
 		print counter
-		# GET THE CURRENT POSITION
-		ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
-		reader = csv.reader(ifile)
-		for row in reader:
-			currentPosition = row
-		for i in xrange(len(currentPosition)):
-			currentPosition[i] = float(currentPosition[i])
-		ifile.close()
 		
 		Note_old = 0
 		if stomped:
-		#	CLASSIFY LOCATION INTO AN INSTRUMENT'
+			# GET THE CURRENT POSITION
+			ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
+			reader = csv.reader(ifile)
+			for row in reader:
+				currentPosition = row
+			for i in xrange(len(currentPosition)):
+				currentPosition[i] = float(currentPosition[i])
+			ifile.close()
+
+			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
 			threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
 	print 'Closing',writePath
