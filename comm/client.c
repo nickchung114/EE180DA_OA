@@ -154,7 +154,8 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
+		//dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
+		dprintf(client_socket_fd,"%d",classify);
 	}
 	// clean up the file descriptors
 	close(client_socket_fd);
