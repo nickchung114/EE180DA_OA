@@ -40,7 +40,8 @@ HOST = socket.gethostname()	# Get local machine name
 PORT = 5000			# Reserve a port for your service
 EXPECTED_USERS = 1		# Number of users
 FOOT_MSG_PAD = 18		# 15 + 3 (negative & zero & decimal)
-FOOT_MSG_LEN = FOOT_MSG_PAD*6 + 1 + 2*6 + 1	# The last byte is newline
+STOMP_LEN = 1			# unsigned int
+FOOT_MSG_LEN = STOMP_LEN + FOOT_MSG_PAD*6 + 2*6 + 1	# The last byte is newline
 MAX_NUM_SAMPLES = 256
 
 hIDtoSocket = {}
@@ -103,7 +104,7 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
 		winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME | winsound.SND_PURGE))
 	Note = pitch + 5*instrument
 	winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME | winsound.SND_ASYNC))
-	conn.sendall(bytes('Word', 'UTF-8'))
+	# conn.sendall(bytes('Word', 'UTF-8'))
 	Note_old = Note
 	print 'Exiting hand_main with client ID', my_id	# WEEDLE
 	
@@ -130,14 +131,19 @@ def foot_main(my_id):
 	NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*2
 	Note_old = 0
 	
-	p = subprocess.Popen("testingpy2mat.bat", shell=True)
+	# p = subprocess.Popen("testingpy2mat.bat", shell=True)
 	#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
 		data = fIDtoSocket[my_id].recv(FOOT_MSG_LEN)
+		while len(data) != FOOT_MSG_LEN:
+			data += fIDtoSocket[my_id].recv(FOOT_MSG_LEN - len(data))
+		# data = fIDtoSocket[my_id].recv(1024)
 		# print 'Data I received:', data	# WEEDLE
+		rawdata = data
+		
 		test_counter += 1
 		if test_counter > NUM_ITERATIONS_FOR_TESTING:
 			print 'Finished',str(NUM_ITERATIONS_FOR_TESTING),'iterations'
@@ -171,10 +177,13 @@ def foot_main(my_id):
 			counter = 0
 		writer.writerow([counter] + data[1:] + [0,0,0])
 		counter += 1
-		print counter
+		print counter, data[0]
+		print rawdata
+		if data[0] > 0:
+			break 
 		
 		Note_old = 0
-		if stomped:
+		if data[0]:
 			# GET THE CURRENT POSITION
 			ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
 			reader = csv.reader(ifile)
@@ -186,7 +195,7 @@ def foot_main(my_id):
 
 			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
-			threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
+			#threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
 	print 'Closing',writePath
 	f.close();
 	print 'Exiting foot_main with client ID ', my_id	# WEEDLE
