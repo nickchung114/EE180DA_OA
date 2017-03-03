@@ -118,18 +118,12 @@ def foot_main(my_id):
 	print 'Starting foot_main with client ID', my_id	# WEEDLE
 	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
 	
-	counter = 0
-	currFileInd = 0
-	fileName = ''.join(['batch',chr(my_id+65),'{0:02d}'.format(currFileInd),'_CalInertialAndMag.csv'])
-	writePath = os.path.join(dir, 'csv', fileName)
-	print 'Writing to',writePath
-	f = open(writePath,'a+')
-	#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-	writer = csv.writer(f)
+	counter = MAX_NUM_SAMPLES
+	currFileInd = -1
+	Note_old = 0
 	
 	test_counter = 0
 	NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*2
-	Note_old = 0
 	
 	# p = subprocess.Popen("testingpy2mat.bat", shell=True)
 	#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
@@ -140,9 +134,8 @@ def foot_main(my_id):
 		data = fIDtoSocket[my_id].recv(FOOT_MSG_LEN)
 		while len(data) != FOOT_MSG_LEN:
 			data += fIDtoSocket[my_id].recv(FOOT_MSG_LEN - len(data))
-		# data = fIDtoSocket[my_id].recv(1024)
 		# print 'Data I received:', data	# WEEDLE
-		rawdata = data
+		# rawdata = data
 		
 		test_counter += 1
 		if test_counter > NUM_ITERATIONS_FOR_TESTING:
@@ -164,23 +157,29 @@ def foot_main(my_id):
 		
 		# STORE INFORMATION INTO A .csv FILE
 		if counter >= MAX_NUM_SAMPLES:
-			print 'Closing',writePath
-			f.close()
+			if currFileInd >= 0:
+				print 'Closing',writePath
+				f.close()
 			# originally str(currFileInd)
 			currFileInd = (currFileInd + 1) % 100
 			fileName = ''.join(['batch',chr(my_id+65),'{0:02d}'.format(currFileInd),'_CalInertialAndMag.csv'])
 			writePath = os.path.join(dir, 'csv', fileName)
+			if os.path.isfile(writePath):
+				# processing occurs slower than read
+				print "ERROR:", writePath, "has not yet been processed by MATLAB."
+				break
 			print 'Writing to',writePath
-			f = open(writePath,'w+b')
+			f = open(writePath,'wb')
 			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
 			writer = csv.writer(f)
 			counter = 0
 		writer.writerow([counter] + data[1:] + [0,0,0])
 		counter += 1
-		print counter, data[0]
-		print rawdata
-		if data[0] > 0:
-			break 
+		# print counter, data[0]
+		# print rawdata
+		if data[0] != 0 and data[0] != 1:
+			print "ERROR: stomp value is", data[0]
+			break
 		
 		Note_old = 0
 		if data[0]:
@@ -196,7 +195,7 @@ def foot_main(my_id):
 			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
 			#threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
-	print 'Closing',writePath
+	print 'Closing   ',writePath
 	f.close();
 	print 'Exiting foot_main with client ID ', my_id	# WEEDLE
 	
@@ -253,5 +252,6 @@ for x in fIDtoSocket.keys():
 	# assuming that each thread still maintains access to the two dictionaries
 	threading.Thread(target=foot_main,args=(x,)).start()
 	# print 'Started thread for foot client', x	# WEEDLE
+
 
 print 'Thread 1 execution complete'
