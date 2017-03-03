@@ -125,7 +125,7 @@ def foot_main(my_id):
 	test_counter = 0
 	NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*2
 	
-	# p = subprocess.Popen("testingpy2mat.bat", shell=True)
+	p = subprocess.Popen("testingpy2mat.bat", shell=True)
 	#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
 
@@ -182,6 +182,8 @@ def foot_main(my_id):
 			break
 		
 		Note_old = 0
+		if testingfoot == 1: 
+			data[0] = 1
 		if data[0]:
 			# GET THE CURRENT POSITION
 			ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
@@ -211,6 +213,7 @@ def foot_main(my_id):
 print 'Starting main'	# WEEDLE
 
 counter = 0
+testingfoot = 1; 
 while counter < EXPECTED_USERS*2:
 	s = socket.socket()	# Create a socket object
 	s.bind((HOST,PORT))	# Bind to the port
@@ -238,15 +241,18 @@ while counter < EXPECTED_USERS*2:
 	else:
 		print "Invalid client ID"
 		sys.exit()
+	if testingfoot == 1:
+		break
 	counter += 1
 
-if not compare_hashable_lists(fIDtoSocket.keys(),hIDtoSocket.keys()):
-	print 'Failed to connect to all foot-hand pairs'
-	unmatched = [x for x in fIDtoSocket.keys() if x not in hIDtoSocket.keys()]
-	print 'Listing all unmatched foot clients', unmatched
-	unmatched = [x for x in hIDtoSocket.keys() if x not in fIDtoSocket.keys()]
-	print 'Listing all unmatched hand clients', unmatched
-	sys.exit()
+if testingfoot == 0:
+	if not compare_hashable_lists(fIDtoSocket.keys(),hIDtoSocket.keys()):
+		print 'Failed to connect to all foot-hand pairs'
+		unmatched = [x for x in fIDtoSocket.keys() if x not in hIDtoSocket.keys()]
+		print 'Listing all unmatched foot clients', unmatched
+		unmatched = [x for x in hIDtoSocket.keys() if x not in fIDtoSocket.keys()]
+		print 'Listing all unmatched hand clients', unmatched
+		sys.exit()
 
 for x in fIDtoSocket.keys():
 	# assuming that each thread still maintains access to the two dictionaries
