@@ -5,11 +5,11 @@ addpath('Quaternions');
 addpath('ximu_matlab_library');
 
 % CONSTANTS
-PLOTLY = 1;
-DEBUG = 1;
+PLOTLY = 0;
+DEBUG = 0;
 RT = 1;
-PERSISTENT = 0;
-PLOT = 1;
+PERSISTENT = 1;
+PLOT = 0;
 ANIMATE = 0;
 batchSize = 256;
 sampRate = 256;
@@ -49,12 +49,12 @@ if (RT && PLOTLY)
 
     ps.open();
 end
-
-for i=1:500 % reset plotly plot
-    mydata.x = 0;
-    mydata.y = 0;
-    ps.write(mydata);
-end
+% 
+% for i=1:500 % reset plotly plot
+%     mydata.x = 0;
+%     mydata.y = 0;
+%     ps.write(mydata);
+% end
 
 % for visualization (NOT REAL-TIME)
 runningPos = zeros(0,3);
