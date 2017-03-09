@@ -3,11 +3,12 @@
 
 `split_files_N` directories are split versions of `Datasets/straightLine_CalInertialAndMag.csv`, where batches are size N
 
-`straightLine_truePos.mat` is the position output from the original X-IMU processing of the straightLine dataset
-`straightLine_trueXXX_RT.mat` is the XXX output from the modified real-time version of the localization algo for the straightLine dataset
+`straightLine_truePos.mat` is the position output from the original X-IMU processing of the `straightLine` dataset
 
-## `gather_data`
-a small framework to demo the localization in real-time
+`straightLine_trueXXX_RT.mat` is the XXX output from the modified real-time version of the localization algo for the `straightLine` dataset
+
+## gather_data
+A small framework to demo the localization in real-time
 
 To use:
 * Run `gather_client` on the Edison 9-DOF
@@ -22,4 +23,4 @@ To use:
 
 `*.BIN` is smth from the original X-IMU datasets. idk what they do
 
-`XXX00_CalInertialAndMag.csv` is just `XXX_CalInertialAndMag` without the column headers (since Matlab RT gait_tracking doesn't want them)
+`XXX00_CalInertialAndMag.csv` is just `XXX_CalInertialAndMag.csv` without the column headers (since Matlab RT gait_tracking doesn't want them)
