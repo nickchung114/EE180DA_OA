@@ -1,5 +1,23 @@
 # GAIT-TRACKING LOCALIZATION
-Quaternions, SixDofAnimation.m, and ximu_matlab_library are adapted from X-IMU's Gait-tracking code
-In Datasets, straightLine, stairsAndCorridor, and spiralStairs are adapted from X-IMU
+Quaternions, AHRS.m, SixDofAnimation.m, and ximu_matlab_library are adapted from X-IMU's Gait-tracking code
 
-split_files_n directories are split versions of Datasets/straightLine_CalInertialAndMag.csv
+split_files_N directories are split versions of Datasets/straightLine_CalInertialAndMag.csv, where batches are size N
+
+straightLine_truePos.mat is the true position output from the original X-IMU processing of the straightLine dataset
+straightLine_trueXXX_RT.mat is the true XXX output from the modified real-time version of the localization algo for the straightLine dataset
+
+## gather_data
+a small framework to demo the localization in real-time
+* Run gather_client on the Edison 9-DOF
+* Run gather_server on the laptop, which receives data from gather_client
+* gather_server writes data out to filesystem interface w/ Matlab
+* Matlab calculates position and sends to Plotly for real-time visualization
+
+gather.c is a less-powerful program that runs on the edison and simply writes out data to a series of files
+
+## Datasets
+straightLine, stairsAndCorridor, and spiralStairs are adapted from X-IMU
+
+*.BIN is smth from the original X-IMU datasets. idk what they do
+
+XXX00_CalInertialAndMag.csv is just XXX_CalInertialAndMag without the column headers (since Matlab RT gait_tracking doesn't want them)

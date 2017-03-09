@@ -1,5 +1,11 @@
 data_*
 *~
 Script.m
-gather_server
+Script_ourscript.m
 currentPosition.csv
+gather_server
+FOOTCLIENTW
+client
+footClient
+handClient
+imu_work

@@ -5,12 +5,15 @@ addpath('Quaternions');
 addpath('ximu_matlab_library');
 
 % CONSTANTS
-PLOTLY = 0;
 DEBUG = 0;
-RT = 1;
-PERSISTENT = 1;
-PLOT = 0;
-ANIMATE = 0;
+
+RT = 0; % Running in real-time
+PERSISTENT = 1; % Don't delete data. Meaningful only if RT is 1
+PLOTLY = 0; % Send data to Plotly. Meaningful only if RT is 1
+
+PLOT = 1; % Plot results when done processing. Meaningful only if RT is 0
+ANIMATE = 1; % Animate results. Meaningful only if RT is 0 and PLOT is 1
+
 batchSize = 256;
 sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
@@ -48,13 +51,13 @@ if (RT && PLOTLY)
     %----open the stream----%
 
     ps.open();
+
+    for i=1:500 % reset plotly plot
+        mydata.x = 0;
+        mydata.y = 0;
+        ps.write(mydata);
+    end
 end
-% 
-% for i=1:500 % reset plotly plot
-%     mydata.x = 0;
-%     mydata.y = 0;
-%     ps.write(mydata);
-% end
 
 % for visualization (NOT REAL-TIME)
 runningPos = zeros(0,3);
@@ -177,7 +180,7 @@ while (1)
     end
     % if real-time, assert len = batchsize
     if (RT && (len < batchSize))
-        fprintf('WARNING: you are running in real-time and your frame is shorter than the expected batch size. Consider revising the code, as it should have prevented the program from reaching this spot.\n');
+        fprintf('WARNING: you are running in real-time and your frame is shorter than the expected batch size. Consider revising this code, as it should have prevented the program from reaching this spot.\n');
     end
     
     % Initial convergence
@@ -494,7 +497,6 @@ if (PLOT)
             % Create 6 DOF animation
             SamplePlotFreq = 4;
             Spin = 120;
-            figure;
             SixDofAnimation(posPlot, quatern2rotMat(quatPlot), ...
                             'SamplePlotFreq', SamplePlotFreq, 'Trail', 'All', ...
                             'Position', [9 39 1280 768], 'View', [(100:(Spin/(length(posPlot)-1)):(100+Spin))', 10*ones(length(posPlot), 1)], ...
