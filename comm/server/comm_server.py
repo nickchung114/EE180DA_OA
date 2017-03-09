@@ -92,7 +92,6 @@ def multireplace(string, replacements):
 	return regexp.sub(lambda match: replacements[match.group(0)], string)
 
 # returns true if the lists contain the same number of each unique element
-# TODO shouldn't this return true if the elements are the same too?
 def compare_hashable_lists(s,t):
 	return collections.Counter(s) == collections.Counter(t)
 
