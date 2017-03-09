@@ -36,14 +36,19 @@ import re		# regex expressions
 ######################## VARIABLE DECLARATIONS ######################
 #####################################################################
 
-HOST = socket.gethostname()	# Get local machine name
+#HOST = socket.gethostname()	# Get local machine name
+HOST = ''
+# TODO make this a command-line argument
 PORT = 5000			# Reserve a port for your service
+
+# TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
 FOOT_MSG_PAD = 18		# 15 + 3 (negative & zero & decimal)
 STOMP_LEN = 1			# unsigned int
 FOOT_MSG_LEN = STOMP_LEN + FOOT_MSG_PAD*6 + 2*6 + 1	# The last byte is newline
 MAX_NUM_SAMPLES = 256
 
+# TODO maybe want smth cleaner? not critical though
 hIDtoSocket = {}
 fIDtoSocket = {}
 dict_rm_ws = {'\\n' : '', '\n' : '', '\r\n' : '', ' ' : ''}
@@ -75,6 +80,7 @@ def multireplace(string, replacements):
 	return regexp.sub(lambda match: replacements[match.group(0)], string)
 
 # returns true if the lists contain the same number of each unique element
+# TODO shouldn't this return true if the elements are the same too?
 def compare_hashable_lists(s,t):
 	return collections.Counter(s) == collections.Counter(t)
 
@@ -210,54 +216,65 @@ def foot_main(my_id):
 # determine which imu each client is
 # spawn a thread (Thread 2) for each foot client
 
-print 'Starting main'	# WEEDLE
+if __name__ == "__main__":
+        counter = 0
+        testingfoot = 1;
+        # TODO This should be an infinite loop in a separate thread
+        while counter < EXPECTED_USERS*2:
+	        s = socket.socket()	# Create a socket object
+	        s.bind((HOST,PORT))	# Bind to the port
+	        s.listen(2*EXPECTED_USERS) # backlog = max # of queued connections
+                
+	        # Waiting for connection
+	        print 'Accepting...'
+	        c, addr = s.accept()	# Establish connection with client
+	        print 'Connected to', addr
+                data = ''
+                while len(data) < 2:
+	                #data = bytearray(c.recv(2))[0]	# Receive id from client (e.g. 0x1F)
+                        data += c.recv(2)
+	        #print 'Received', data
 
-counter = 0
-testingfoot = 1; 
-while counter < EXPECTED_USERS*2:
-	s = socket.socket()	# Create a socket object
-	s.bind((HOST,PORT))	# Bind to the port
-	s.listen(5)		# backlog = max # of queued connections
-				# Waiting for connection
-	print 'Accepting...'	# WEEDLE
-	c, addr = s.accept()	# Establish connection with client
-	print 'Connected to', addr	# WEEDLE
-	data = bytearray(c.recv(2))[0]	# Receive id from client (e.g. 0x1F)
-	print 'Received', data 
-	client_type = data >> 4;	# 1 -> foot; 0 -> hand
-	client_ID = data & 0x0F;
-	if client_type == 1:
-		if fIDtoSocket.has_key(client_ID):
-			print 'Already connected with foot client', client_ID
-			continue	# maybe this should stop
-		fIDtoSocket[client_ID] = c	# i really hope this is passed-by-value
-		print 'Connected with foot client', client_ID
-	elif client_type == 0:
-		if hIDtoSocket.has_key(client_ID):
-			print 'Already connected with hand client ', client_ID
-			continue	# maybe this should stop
-		hIDtoSocket[client_ID] = c
-		print 'Connected with hand client', client_ID
-	else:
-		print "Invalid client ID"
-		sys.exit()
-	if testingfoot == 1:
-		break
-	counter += 1
+	        #client_type = data >> 4;	# 1 -> foot; 0 -> hand
+	        #client_ID = data & 0x0F;
+                (client_type, client_ID) = struct.unpack('<BB',data)
+                print 'CLIENT TYPE', client_type
+                print 'CLIENT ID', client_ID
+	        if client_type == 1:
+		        if fIDtoSocket.has_key(client_ID):
+			        print 'Already connected with foot client', client_ID
+                                # TODO send back refusal to client so it can end gracefully and close this socket
+                                continue	# maybe this should stop
+                        fIDtoSocket[client_ID] = c	# i really hope this is passed-by-value YES
+                        print 'Connected with foot client', client_ID
+	        elif client_type == 0:
+		        if hIDtoSocket.has_key(client_ID):
+			        print 'Already connected with hand client ', client_ID
+                                # TODO send back refusal to client so it can end gracefully and close this socket
+			        continue	# maybe this should stop
+		        hIDtoSocket[client_ID] = c
+		        print 'Connected with hand client', client_ID
+	        else:
+		        print "Invalid client ID"
+		        # TODO send back refusal to client so it can end gracefully and close this socket
+                        continue
+	        if testingfoot == 1:
+		        break
+	        counter += 1
 
-if testingfoot == 0:
-	if not compare_hashable_lists(fIDtoSocket.keys(),hIDtoSocket.keys()):
-		print 'Failed to connect to all foot-hand pairs'
-		unmatched = [x for x in fIDtoSocket.keys() if x not in hIDtoSocket.keys()]
-		print 'Listing all unmatched foot clients', unmatched
-		unmatched = [x for x in hIDtoSocket.keys() if x not in fIDtoSocket.keys()]
-		print 'Listing all unmatched hand clients', unmatched
-		sys.exit()
+        # At this point all foot-hand clients should be paired
+        if testingfoot == 0:
+	        if not compare_hashable_lists(fIDtoSocket.keys(),hIDtoSocket.keys()):
+		        print 'Failed to connect to all foot-hand pairs'
+		        unmatched = [x for x in fIDtoSocket.keys() if x not in hIDtoSocket.keys()]
+		        print 'Listing all unmatched foot clients', unmatched
+		        unmatched = [x for x in hIDtoSocket.keys() if x not in fIDtoSocket.keys()]
+		        print 'Listing all unmatched hand clients', unmatched
+		        sys.exit()
 
-for x in fIDtoSocket.keys():
-	# assuming that each thread still maintains access to the two dictionaries
-	threading.Thread(target=foot_main,args=(x,)).start()
-	# print 'Started thread for foot client', x	# WEEDLE
+        for x in fIDtoSocket.keys():
+	        # assuming that each thread still maintains access to the two dictionaries YES
+	        threading.Thread(target=foot_main,args=(x,)).start()
+	        # print 'Started thread for foot client', x
 
-
-print 'Thread 1 execution complete'
+        print 'Thread 1 execution complete'

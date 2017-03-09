@@ -32,7 +32,7 @@
 
 void error(const char *msg) {
   perror(msg);
-  exit(0);
+  exit(1);
 }
 
 int main(int argc, char *argv[]) {
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   server = gethostbyname(argv[1]);
   if (server == NULL) {
     fprintf(stderr,"ERROR, no such host\n");
-    exit(0);
+    exit(1);
   }
 
   // clear our the serv_addr buffer
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
 	printf("%i points\n", num_pts);
 	printf("    send_idx: %d    curr_idx: %d\n", send_idx, curr_idx);
 	printf("    X: %f\t Y: %f\t Z: %f\t||", accel_data.x, accel_data.y, accel_data.z);
-	printf("\tX: %f\t Y: %f\t Z: %f p: %d\t\n", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z, num_pts);
+	printf("\tX: %f\t Y: %f\t Z: %f p: %d\n", gyro_data.x - gyro_offset.x, gyro_data.y - gyro_offset.y, gyro_data.z - gyro_offset.z, num_pts);
       }
 
 #ifdef DEBUG
