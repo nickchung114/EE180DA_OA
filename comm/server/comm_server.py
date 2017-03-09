@@ -101,7 +101,7 @@ def compare_hashable_lists(s,t):
 # block/wait
 # play a sound based on (instrument, note)
 def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_old to foot_main.
-	print 'Starting hand_main with client ID', my_id	# WEEDLE
+	print 'Starting hand_main with client ID', my_id
 	# SEND AN INTERRUPT
 	hIDtoSocket[my_id].send('ahem')
 	# ESTABLISH A LISTENER
@@ -201,7 +201,7 @@ def foot_main(my_id):
 			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
 			writer = csv.writer(f)
 			counter = 0
-                (gyroX, gyroY, gyroZ, accelX, accelY, accelZ, stomp) = struct.unpack('<ffffffI', data)
+                (gyroX, gyroY, gyroZ, accelX, accelY, accelZ, stomp) = struct.unpack('<fffffff', data)
 		#writer.writerow([counter] + data[1:] + [0,0,0])
                 writer.writerow([counter, gyroX, gyroY, gyroZ, accelX, accelY, accelY, accelZ, 0, 0, 0])
 		counter += 1
