@@ -7,6 +7,8 @@
 
 `straightLine_trueXXX_RT.mat` is the XXX output from the modified real-time version of the localization algo for the `straightLine` dataset
 
+`Script_batched.m` is the main real-time Matlab gait-tracking algo
+
 ## gather_data
 A small framework to demo the localization in real-time
 
