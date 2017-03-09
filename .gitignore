@@ -9,3 +9,9 @@ client
 footClient
 handClient
 imu_work
+FOOTCLIENTW_testbyprinting.c
+example.c
+footClient_old.c
+handClient.c
+imu_work.c
+test.csv
