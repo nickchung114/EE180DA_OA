@@ -22,15 +22,18 @@
 ############################# LIBRARIES #############################
 #####################################################################
 
-import socket		# Import socket module
-import sys
-import threading	# multithreading for multiple users
 import collections	# for Counter()
 import csv		# writing to .csv's
 import os		# relative file paths
-import subprocess 
-import winsound
 import re		# regex expressions
+import socket		# Import socket module
+import struct
+import subprocess
+import sys
+import threading	# multithreading for multiple users
+
+if not(sys.platform == "linux" or sys.platform == "linux2"):
+        import winsound
 
 #####################################################################
 ######################## VARIABLE DECLARATIONS ######################
@@ -43,10 +46,16 @@ PORT = 5000			# Reserve a port for your service
 
 # TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
-FOOT_MSG_PAD = 18		# 15 + 3 (negative & zero & decimal)
+#FOOT_MSG_PAD = 18		# 15 + 3 (negative & zero & decimal)
 STOMP_LEN = 1			# unsigned int
-FOOT_MSG_LEN = STOMP_LEN + FOOT_MSG_PAD*6 + 2*6 + 1	# The last byte is newline
-MAX_NUM_SAMPLES = 256
+#FOOT_MSG_LEN = STOMP_LEN + FOOT_MSG_PAD*6 + 2*6 + 1	# The last byte is newline
+FOOT_MSG_LEN = STOMP_LEN + 6 # stomp + (dimensions * |{accel,gyro}|
+FOOT_MSG_BYTES = FOOT_MSG_LEN*4 # everything is 4 bytes
+MAX_NUM_SAMPLES = 256 # ie: BATCH_PTS
+MAX_FILES = 1 # flag that says whether or not to limit num of files (for testing)
+MAX_NUM_FILES = 2
+NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*MAX_NUM_FILES
+FILE_MAX = 100
 
 # TODO maybe want smth cleaner? not critical though
 hIDtoSocket = {}
@@ -54,7 +63,10 @@ fIDtoSocket = {}
 dict_rm_ws = {'\\n' : '', '\n' : '', '\r\n' : '', ' ' : ''}
 
 dir = os.path.abspath(os.path.dirname('__file__'))
-   
+GAIT_RELPATH = '../../gait_tracking'
+GAIT_PATH = os.path.abspath(GAIT_RELPATH)
+GAIT_DATA = 'data'
+
 #####################################################################
 ####################### FUNCTION DECLARATIONS #######################
 #####################################################################
@@ -116,83 +128,97 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
 	
 # OBJECTIVE (for Thread 2)
 # poll streaming data
-# gait tracking
+# gait tracking (ie: write out to filesystem)
 # if a stomp is detected by the foot IMU
 # 	classify location into an instrument
 # 	spawn a thread (Thread 3) for corresponding hand client
 def foot_main(my_id):
-	print 'Starting foot_main with client ID', my_id	# WEEDLE
-	fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
+	print 'Starting foot_main with client ID', my_id
+        sock = fIDtoSocket[my_id]
+	#fIDtoSocket[my_id].send("hello")	# let foot client know we're ready
+        sock.send(struct.pack('<B',1))
 	
 	counter = MAX_NUM_SAMPLES
 	currFileInd = -1
 	Note_old = 0
 	
 	test_counter = 0
-	NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*2
 	
-	p = subprocess.Popen("testingpy2mat.bat", shell=True)
-	#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
-
+        # TODO get this working more elegantly. for now just have matlab running at the same time
+        # if sys.platform == "linux" or sys.platform == "linux2":
+        #         p = subprocess.Popen(['./testingpy2mat.sh'])
+        # else: # windows
+	#         p = subprocess.Popen("testingpy2mat.bat", shell=True)
+	#         #testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
-		data = fIDtoSocket[my_id].recv(FOOT_MSG_LEN)
-		while len(data) != FOOT_MSG_LEN:
-			data += fIDtoSocket[my_id].recv(FOOT_MSG_LEN - len(data))
-		# print 'Data I received:', data	# WEEDLE
+		data = ''
+		while len(data) < FOOT_MSG_BYTES:
+			data += sock.recv(FOOT_MSG_BYTES-len(data))
+		# print 'Data I received:', data
 		# rawdata = data
 		
 		test_counter += 1
-		if test_counter > NUM_ITERATIONS_FOR_TESTING:
+		if test_counter > NUM_ITERATIONS_FOR_TESTING and MAX_FILES:
 			print 'Finished',str(NUM_ITERATIONS_FOR_TESTING),'iterations'
 			break
-		#"""
-		try:
-			#data = [float(x.strip(' \n\r\n')) for x in data.split(',')]
-			data = [float(multireplace(x,dict_rm_ws)) for x in data.split(',')]
-		except Exception as e: 
-			print e
-			print [repr(x.strip(' \n\r\n')) for x in data.split(',')]
-			print '\n\n\n\n~~~'
-			break
+
+                # UNCOMMENT the following if sending data as a string
+		# try:
+		# 	#data = [float(x.strip(' \n\r\n')) for x in data.split(',')]
+		# 	data = [float(multireplace(x,dict_rm_ws)) for x in data.split(',')]
+		# except Exception as e: 
+		# 	print e
+		# 	print [repr(x.strip(' \n\r\n')) for x in data.split(',')]
+		# 	print '\n\n\n\n~~~'
+		# 	break
+                
 		#print [repr(d) for d in data]	# WEEDLE
 		#print data
-		#"""
-		
 		
 		# STORE INFORMATION INTO A .csv FILE
 		if counter >= MAX_NUM_SAMPLES:
-			if currFileInd >= 0:
+                        # TODO maybe want to do this in a clearer way? not critical though
+                        if currFileInd >= 0:
 				print 'Closing',writePath
 				f.close()
 			# originally str(currFileInd)
-			currFileInd = (currFileInd + 1) % 100
-			fileName = ''.join(['batch',chr(my_id+65),'{0:02d}'.format(currFileInd),'_CalInertialAndMag.csv'])
-			writePath = os.path.join(dir, 'csv', fileName)
+			currFileInd = (currFileInd + 1) % FILE_MAX
+			#fileName = ''.join(['batch',chr(my_id+65),'{0:02d}'.format(currFileInd),'_CalInertialAndMag.csv'])
+                        fileName = 'id{0:02d}batch{1:02d}_CalInertialAndMag.csv'.format(my_id, currFileInd)
+                        
+			#writePath = os.path.join(dir, 'csv', fileName)
+                        writePath = os.path.join(GAIT_PATH, GAIT_DATA, fileName)
+                        
 			if os.path.isfile(writePath):
 				# processing occurs slower than read
 				print "ERROR:", writePath, "has not yet been processed by MATLAB."
+                                # Filesystem ring buffer full! panic!
 				break
-			print 'Writing to',writePath
+			print 'Writing to:',writePath
+                        # TODO this should be done using "with open..."
 			f = open(writePath,'wb')
 			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
 			writer = csv.writer(f)
 			counter = 0
-		writer.writerow([counter] + data[1:] + [0,0,0])
+                (gyroX, gyroY, gyroZ, accelX, accelY, accelZ, stomp) = struct.unpack('<ffffffI', data)
+		#writer.writerow([counter] + data[1:] + [0,0,0])
+                writer.writerow([counter, gyroX, gyroY, gyroZ, accelX, accelY, accelY, accelZ, 0, 0, 0])
 		counter += 1
+                
 		# print counter, data[0]
 		# print rawdata
-		if data[0] != 0 and data[0] != 1:
-			print "ERROR: stomp value is", data[0]
+		if stomp != 0 and stomp != 1:
+			print "ERROR: stomp value invalid:", stomp
 			break
 		
 		Note_old = 0
 		if testingfoot == 1: 
-			data[0] = 1
-		if data[0]:
+			stomp = 1
+		if stomp:
 			# GET THE CURRENT POSITION
-			ifile = open(os.path.join(dir,'csv','currentPosition.csv'), "rb")
+			ifile = open(os.path.join(GAIT_PATH,'currentPosition.csv'), "rb")
 			reader = csv.reader(ifile)
 			for row in reader:
 				currentPosition = row
@@ -203,9 +229,9 @@ def foot_main(my_id):
 			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
 			#threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
-	print 'Closing   ',writePath
+	print 'Closing:',writePath
 	f.close();
-	print 'Exiting foot_main with client ID ', my_id	# WEEDLE
+	print 'Exiting foot_main with client ID:', my_id
 	
 #####################################################################
 ##################### MAIN THREAD (1) EXECUTION #####################
@@ -237,7 +263,7 @@ if __name__ == "__main__":
 
 	        #client_type = data >> 4;	# 1 -> foot; 0 -> hand
 	        #client_ID = data & 0x0F;
-                (client_type, client_ID) = struct.unpack('<BB',data)
+                (client_ID, client_type) = struct.unpack('BB',data)
                 print 'CLIENT TYPE', client_type
                 print 'CLIENT ID', client_ID
 	        if client_type == 1:
@@ -274,7 +300,5 @@ if __name__ == "__main__":
 
         for x in fIDtoSocket.keys():
 	        # assuming that each thread still maintains access to the two dictionaries YES
-	        threading.Thread(target=foot_main,args=(x,)).start()
+                threading.Thread(target=foot_main,args=(x,)).start()
 	        # print 'Started thread for foot client', x
-
-        print 'Thread 1 execution complete'
