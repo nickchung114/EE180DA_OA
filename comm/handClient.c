@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     }
     
     //dprintf(client_socket_fd,"%d",classify);
-    printf("ANGLE: %f,CLASS: %d\n",x_angle, classify);
+    printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
   }
   // clean up the file descriptors
   close(client_socket_fd);

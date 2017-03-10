@@ -38,8 +38,6 @@ else:
         import pyaudio
         import wave
 
-        p = pyaudio.PyAudio()
-
         CHUNK = 1024
         
 #####################################################################
@@ -49,7 +47,7 @@ else:
 #HOST = socket.gethostname()	# Get local machine name
 HOST = ''
 # TODO make this a command-line argument
-PORT = 5000			# Reserve a port for your service
+PORT = 8000			# Reserve a port for your service
 
 # TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
@@ -125,10 +123,10 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
 	#pitch = data3[1]
 	pitch = struct.unpack('<i', data1)[0]
 	# PLAY SOUND
-	NoteArray = ['zero','Bassoon_c.wav','Bassoon_d.wav','Bassoon_e.wav','Bassoon_f.wav','Bassoon_g.wav',
-                'French_c.wav','French_d.wav','French_e.wav','French_f.wav','French_g.wav',
-                'Guitar_C.wav','Guitar_d.wav','Guitar_e.wav','Guitar_f.wav','Guitar_g.wav',
-                'Violin_c.wav','Violin_d.wav','Violin_e.wav','Violin_f.wav','Violin_g.wav']
+	NoteArray = ['zero','Bassoon_C.wav','Bassoon_D.wav','Bassoon_E.wav','Bassoon_F.wav','Bassoon_G.wav',
+                'French_C.wav','French_D.wav','French_E.wav','French_F.wav','French_G.wav',
+                'Guitar_C.wav','Guitar_D.wav','Guitar_E.wav','Guitar_F.wav','Guitar_G.wav',
+                'Violin_C.wav','Violin_D.wav','Violin_E.wav','Violin_F.wav','Violin_G.wav']
         Note = pitch + 5*instrument
         # Stop playing the previous note if it is a wind or instrument or violin.
         if not(sys.platform == "linux" or sys.platform == "linux2"):
@@ -138,7 +136,8 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
 	# conn.sendall(bytes('Word', 'UTF-8'))
         else:
                 # Refer to: http://people.csail.mit.edu/hubert/pyaudio/
-                wf = wave.open(NoteArray[Note], 'rb')
+                p = pyaudio.PyAudio()
+                wf = wave.open(os.path.join('wav',NoteArray[Note]), 'rb')
                 stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                                 channels=wf.getnchannels(),
                                 rate=wf.getframerate(),
@@ -150,12 +149,10 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
                         
                 stream.stop_stream()
                 stream.close()
+                p.terminate()
                 
 	Note_old = Note
         
-        if sys.platform == "linux" or sys.platform == "linux2":
-                p.terminate()
-
 	print 'Exiting hand_main with client ID', my_id
 	
 # OBJECTIVE (for Thread 2)

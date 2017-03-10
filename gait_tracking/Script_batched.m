@@ -132,9 +132,20 @@ while (1)
     else % ~DEBUG
         % infinite loop until next file is available
         %while (~(exist(fileName, 'file') == 2))
-        [s,w] = system(sprintf('wc -l %s', fileName));
+        if ispc
+            [s,w] = system(sprintf('find /c /v "" %s', fileName));
+        else
+            [s,w] = system(sprintf('wc -l %s', fileName));
+        end
+        
         wNum = w-'0';
-        lineCount = str2double(w(1:find(diff(wNum >= 0 & wNum < 10) == -1, 1)));
+        
+        if ispc
+            lineCount =  str2double(w(find(diff(wNum >= 0 & wNum < 10) == 1, 1, 'last')+1:end));
+        else
+            lineCount = str2double(w(1:find(diff(wNum >= 0 & wNum < 10) == -1, 1)));
+        end
+        
         while (~((s == 0) && (lineCount >= batchSize))) % while the file doesn't exist
             if (DEBUG && ~msg)
                 fprintf('Waiting for file: %s\n', fileName);
