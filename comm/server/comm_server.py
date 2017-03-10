@@ -49,7 +49,7 @@ else:
 #HOST = socket.gethostname()	# Get local machine name
 HOST = ''
 # TODO make this a command-line argument
-PORT = 5000			# Reserve a port for your service
+PORT = 8000			# Reserve a port for your service
 
 # TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
@@ -177,9 +177,10 @@ def foot_main(my_id):
 	test_counter = 0
 	
         # TODO get this working more elegantly. for now just have matlab running at the same time for linux
-        if sys.platform == "linux" or sys.platform == "linux2":
-                #p = subprocess.Popen(['./testingpy2mat.sh'])
-	else: # windows
+        # if sys.platform == "linux" or sys.platform == "linux2":
+        #         #p = subprocess.Popen(['./testingpy2mat.sh'])
+	# else: # windows
+        if not(sys.platform == "linux" or sys.platform == "linux2"): # windows
 		p = subprocess.Popen("testingpy2mat.bat", shell=True)
 		#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
@@ -281,12 +282,13 @@ def foot_main(my_id):
 if __name__ == "__main__":
         counter = 0
         testingfoot = 0
+
+	s = socket.socket()	# Create a socket object
+	s.bind((HOST,PORT))	# Bind to the port
+	s.listen(2*EXPECTED_USERS) # backlog = max # of queued connections
+                
         # TODO This should be an infinite loop in a separate thread
         while counter < EXPECTED_USERS*2:
-	        s = socket.socket()	# Create a socket object
-	        s.bind((HOST,PORT))	# Bind to the port
-	        s.listen(2*EXPECTED_USERS) # backlog = max # of queued connections
-                
 	        # Waiting for connection
 	        print 'Accepting...'
 	        c, addr = s.accept()	# Establish connection with client

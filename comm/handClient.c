@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   // check if the socket was created successfully. If it wasnt, display an error and exit
   if(client_socket_fd < 0) {
-    error("ERROR opening socket");
+    error("ERROR opening socket\n");
   }
 
   // check if the IP entered by the user is valid 
@@ -86,8 +86,6 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  printf("setting up more of the socket");
-	
   // clear our the serv_addr buffer
   memset((char *) &serv_addr, 0, sizeof(serv_addr));
   // set up the socket 
@@ -97,7 +95,7 @@ int main(int argc, char *argv[]) {
 	
   // try to connect to the server
   if (connect(client_socket_fd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0){ 
-    error("ERROR connecting");
+    error("ERROR connecting\n");
   }
 	
   /*
@@ -117,7 +115,7 @@ int main(int argc, char *argv[]) {
     // n contains how many bytes were received by the server
     // if n is less than 0, then there was an error
     if (n < 0) {
-      error("ERROR writing to socket");
+      error("ERROR writing to socket\n");
     }
     sent += n;
   }
@@ -126,11 +124,12 @@ int main(int argc, char *argv[]) {
   //Wait for server pings.
   //int continue = 1;
   while (1) {
+    printf("Received ping\n");
     tot = 0;
     while (tot < 1) {
       n = read(client_socket_fd, &dummy, 1); // hang until received ping
       if (n < 0) {
-	error("ERROR reading from socket");
+	error("ERROR reading from socket\n");
       }
       tot += n;
     }
@@ -168,7 +167,7 @@ int main(int argc, char *argv[]) {
     }
     
     //dprintf(client_socket_fd,"%d",classify);
-    printf("%f,%d\n",x_angle, classify);
+    printf("ANGLE: %f,CLASS: %d\n",x_angle, classify);
   }
   // clean up the file descriptors
   close(client_socket_fd);
