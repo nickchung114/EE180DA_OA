@@ -49,7 +49,7 @@ else:
 #HOST = socket.gethostname()	# Get local machine name
 HOST = ''
 # TODO make this a command-line argument
-PORT = 8000			# Reserve a port for your service
+PORT = 5000			# Reserve a port for your service
 
 # TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
@@ -60,7 +60,7 @@ FOOT_MSG_LEN = STOMP_LEN + 6 # stomp + (dimensions * |{accel,gyro}|
 FOOT_MSG_BYTES = FOOT_MSG_LEN*4 # everything is 4 bytes
 MAX_NUM_SAMPLES = 256 # ie: BATCH_PTS
 MAX_FILES = 1 # flag that says whether or not to limit num of files (for testing)
-MAX_NUM_FILES = 2
+MAX_NUM_FILES = 60
 NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*MAX_NUM_FILES
 FILE_MAX = 100
 

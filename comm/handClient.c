@@ -119,12 +119,11 @@ int main(int argc, char *argv[]) {
     }
     sent += n;
   }
-  printf("Sent my ID to server.\n");
+  printf("Sent my ID to server. Now waiting...\n");
 
   //Wait for server pings.
   //int continue = 1;
   while (1) {
-    printf("Received ping\n");
     tot = 0;
     while (tot < 1) {
       n = read(client_socket_fd, &dummy, 1); // hang until received ping
@@ -133,6 +132,7 @@ int main(int argc, char *argv[]) {
       }
       tot += n;
     }
+    printf("Received ping\n");
 		
     //code for classification.
     accel_data = read_accel(accel, a_res);
