@@ -34,7 +34,14 @@ import threading	# multithreading for multiple users
 
 if not(sys.platform == "linux" or sys.platform == "linux2"):
         import winsound
+else:
+        import pyaudio
+        import wave
 
+        p = pyaudio.PyAudio()
+
+        CHUNK = 1024
+        
 #####################################################################
 ######################## VARIABLE DECLARATIONS ######################
 #####################################################################
@@ -102,28 +109,54 @@ def compare_hashable_lists(s,t):
 # play a sound based on (instrument, note)
 def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_old to foot_main.
 	print 'Starting hand_main with client ID', my_id
+        sock = hIDtoSocket[my_id]
+
 	# SEND AN INTERRUPT
-	hIDtoSocket[my_id].send('ahem')
+        sock.send(struct.pack('<B',1))
+
 	# ESTABLISH A LISTENER
 	# WAIT
 	# RECEIVE CLASSIFIED DATA (i.e. NOTE)
-	data1 = hIDtoSocket[my_id].recv(1)
+	data1 = ''
+        while len(data1) < 4:
+                data1 += sock.recv(4-len(data1))
 	#data2 = data1.split(,)
 	#data3 = [int(e) for e in data2]
 	#pitch = data3[1]
-	pitch = int(data1)
+	pitch = struct.unpack('<i', data1)[0]
 	# PLAY SOUND
 	NoteArray = ['zero','Bassoon_c.wav','Bassoon_d.wav','Bassoon_e.wav','Bassoon_f.wav','Bassoon_g.wav',
                 'French_c.wav','French_d.wav','French_e.wav','French_f.wav','French_g.wav',
                 'Guitar_C.wav','Guitar_d.wav','Guitar_e.wav','Guitar_f.wav','Guitar_g.wav',
                 'Violin_c.wav','Violin_d.wav','Violin_e.wav','Violin_f.wav','Violin_g.wav']
-	if Note_old < 11 or Note_old > 15: #Stop playing the previous note if it is a wind or instrument or violin.
-		winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME | winsound.SND_PURGE))
-	Note = pitch + 5*instrument
-	winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME | winsound.SND_ASYNC))
+        Note = pitch + 5*instrument
+        # Stop playing the previous note if it is a wind or instrument or violin.
+        if not(sys.platform == "linux" or sys.platform == "linux2"):
+                if Note_old < 11 or Note_old > 15:
+                        winsound.PlaySound(NoteArray[Note_old], (winsound.SND_FILENAME | winsound.SND_PURGE))
+	        winsound.PlaySound(NoteArray[Note], (winsound.SND_FILENAME | winsound.SND_ASYNC))
 	# conn.sendall(bytes('Word', 'UTF-8'))
+        else:
+                # Refer to: http://people.csail.mit.edu/hubert/pyaudio/
+                wf = wave.open(NoteArray[Note], 'rb')
+                stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                                channels=wf.getnchannels(),
+                                rate=wf.getframerate(),
+                                output=True)
+                data = wf.readframes(CHUNK)
+                while data != '':
+                        stream.write(data)
+                        data = wf.readframes(CHUNK)
+                        
+                stream.stop_stream()
+                stream.close()
+                
 	Note_old = Note
-	print 'Exiting hand_main with client ID', my_id	# WEEDLE
+        
+        if sys.platform == "linux" or sys.platform == "linux2":
+                p.terminate()
+
+	print 'Exiting hand_main with client ID', my_id
 	
 # OBJECTIVE (for Thread 2)
 # poll streaming data
@@ -143,12 +176,12 @@ def foot_main(my_id):
 	
 	test_counter = 0
 	
-        # TODO get this working more elegantly. for now just have matlab running at the same time
-        # if sys.platform == "linux" or sys.platform == "linux2":
-        #         p = subprocess.Popen(['./testingpy2mat.sh'])
-        # else: # windows
-	#         p = subprocess.Popen("testingpy2mat.bat", shell=True)
-	#         #testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
+        # TODO get this working more elegantly. for now just have matlab running at the same time for linux
+        if sys.platform == "linux" or sys.platform == "linux2":
+                #p = subprocess.Popen(['./testingpy2mat.sh'])
+        else: # windows
+	        p = subprocess.Popen("testingpy2mat.bat", shell=True)
+	        #testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
@@ -173,7 +206,7 @@ def foot_main(my_id):
 		# 	print '\n\n\n\n~~~'
 		# 	break
                 
-		#print [repr(d) for d in data]	# WEEDLE
+		#print [repr(d) for d in data]
 		#print data
 		
 		# STORE INFORMATION INTO A .csv FILE
@@ -257,7 +290,7 @@ if __name__ == "__main__":
                 data = ''
                 while len(data) < 2:
 	                #data = bytearray(c.recv(2))[0]	# Receive id from client (e.g. 0x1F)
-                        data += c.recv(2)
+                        data += c.recv(2-len(data))
 	        #print 'Received', data
 
 	        #client_type = data >> 4;	# 1 -> foot; 0 -> hand
