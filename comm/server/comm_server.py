@@ -259,6 +259,12 @@ def foot_main(my_id):
 
 			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
+			if currentPosition[0] <= 0 and currentPosition[1] > 0:
+				instrument = 1
+			elif currentPosition[0] <=0 and currentPosition[1] <= 0:
+				instrument = 2
+			elif currentPosition[0] > 0 and currentPosition[1] > 0:
+				instrument = 3
 			threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
 	try:
 		print 'Closing:',writePath
