@@ -12,7 +12,7 @@
 
 #include "LSM9DS0.h"
 
-#define DEBUG
+//#define DEBUG
 
 // point := sample
 #define PACK_PTS 16 // number of pts per packet. Should divide BATCH_PTS
