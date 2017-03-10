@@ -261,8 +261,11 @@ def foot_main(my_id):
 			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
 			#threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
-	print 'Closing:',writePath
-	f.close();
+	try:
+		print 'Closing:',writePath
+		f.close();
+	except:
+		print 'Please klean gait_tracking/data directory'
 	print 'Exiting foot_main with client ID:', my_id
 	
 #####################################################################
@@ -276,7 +279,7 @@ def foot_main(my_id):
 
 if __name__ == "__main__":
         counter = 0
-        testingfoot = 1;
+        testingfoot = 0
         # TODO This should be an infinite loop in a separate thread
         while counter < EXPECTED_USERS*2:
 	        s = socket.socket()	# Create a socket object
