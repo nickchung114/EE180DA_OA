@@ -179,9 +179,9 @@ def foot_main(my_id):
         # TODO get this working more elegantly. for now just have matlab running at the same time for linux
         if sys.platform == "linux" or sys.platform == "linux2":
                 #p = subprocess.Popen(['./testingpy2mat.sh'])
-        else: # windows
-	        p = subprocess.Popen("testingpy2mat.bat", shell=True)
-	        #testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
+	else: # windows
+		p = subprocess.Popen("testingpy2mat.bat", shell=True)
+		#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
@@ -249,6 +249,7 @@ def foot_main(my_id):
 		if testingfoot == 1: 
 			stomp = 1
 		if stomp:
+			print 'THERE WAS A STOMP'
 			# GET THE CURRENT POSITION
 			ifile = open(os.path.join(GAIT_PATH,'currentPosition.csv'), "rb")
 			reader = csv.reader(ifile)
@@ -260,7 +261,7 @@ def foot_main(my_id):
 
 			# CLASSIFY LOCATION INTO AN INSTRUMENT
 			instrument = 0
-			#threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
+			threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
 	try:
 		print 'Closing:',writePath
 		f.close();
