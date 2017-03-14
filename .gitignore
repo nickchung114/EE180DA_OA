@@ -15,3 +15,6 @@ footClient_old.c
 imu_work.c
 test.csv
 test.py
+id*batch*
+4
+test_hclient1
