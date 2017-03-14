@@ -141,12 +141,14 @@ int main(int argc, char *argv[]) {
     //cali_xyz[1] = accel_data.y;
     cali_xyz[2] = accel_data.z;
 
+    /*
     x_angle = cali_xyz[0]*90;
     if(cali_xyz[2] < 0)
       x_angle = 180-x_angle;
     if(x_angle < -90 || x_angle > 270)
       x_angle = 360-x_angle;
-		
+    */
+    x_angle = atan2(cali_xyz[2],cali_xyz[0]);
     for(j = 1; j <= NUM_NOTES; j++) {
       if(x_angle < -90 + j*180/NUM_NOTES) {
 	classify = j;
