@@ -47,7 +47,7 @@ else:
 #HOST = socket.gethostname()	# Get local machine name
 HOST = ''
 # TODO make this a command-line argument
-PORT = 8000			# Reserve a port for your service
+PORT = 5000			# Reserve a port for your service
 
 # TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
@@ -71,6 +71,8 @@ dir = os.path.abspath(os.path.dirname('__file__'))
 GAIT_RELPATH = '../../gait_tracking'
 GAIT_PATH = os.path.abspath(GAIT_RELPATH)
 GAIT_DATA = 'data'
+
+num_stomps = 0
 
 #####################################################################
 ####################### FUNCTION DECLARATIONS #######################
@@ -106,7 +108,7 @@ def compare_hashable_lists(s,t):
 # block/wait
 # play a sound based on (instrument, note)
 def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_old to foot_main.
-	print 'Starting hand_main with client ID', my_id
+	print 'Starting hand_main with client ID', my_id, 'from stomp', num_stomps
         sock = hIDtoSocket[my_id]
 
 	# SEND AN INTERRUPT
@@ -153,7 +155,7 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
                 
 	Note_old = Note
         
-	print 'Exiting hand_main with client ID', my_id
+	print 'Exiting  hand_main with client ID', my_id, 'from stomp', num_stomps
 	
 # OBJECTIVE (for Thread 2)
 # poll streaming data
