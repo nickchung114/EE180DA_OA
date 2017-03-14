@@ -12,7 +12,7 @@ PERSISTENT = 0; % Don't delete data. Meaningful only if RT is 1
 PLOTLY = 0; % Send data to Plotly. Meaningful only if RT is 1
 
 PLOT = 1; % Plot results when done processing. Meaningful only if RT is 0
-ANIMATE = 0; % Animate results. Meaningful only if RT is 0 and PLOT is 1
+ANIMATE = 1; % Animate results. Meaningful only if RT is 0 and PLOT is 1
 
 batchSize = 256;
 sampRate = 256;
@@ -85,6 +85,7 @@ initAccZ = zeros(initTot,1);
 currentPosition = zeros(1,3);
 currentVelocity = zeros(1,3);
 
+
 % -------------------------------------------------------------------------
 % Select dataset (comment in/out)
 
@@ -100,8 +101,8 @@ filePath = 'data/id00batch';
 
 %filePath = 'Datasets/spiralStairs';
 
-mat2pyFilename = '../comm/server/csv/currentPosition.csv';
-
+mat2pyFilename = 'currentPosition.csv';
+csvwrite(mat2pyFilename,currentPosition);
 % HPF Stuff
 %filtCutOffHigh = 0.001; % in Hz. Just cut out DC component
 filtCutOffHigh = 5; % needs to be higher for df1 to work...?
