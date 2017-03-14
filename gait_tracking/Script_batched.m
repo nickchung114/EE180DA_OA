@@ -20,6 +20,7 @@ bufSize = 100; % number of files in ring buffer btwn Python and Matlab
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
 stationaryThresh = 0.005;
+stompThresh = 3; %energy = sqrt(ax*ax + ay*ay + az*az); from Daguan's code
 msg = 0;
 numSamples = 0;
 plotlyPeriod = 32;
@@ -268,7 +269,7 @@ while (1)
 
         % Threshold detection
         %stationary1 = acc_magFilt1 < 0.05;
-        stationary = acc_magFilt < stationaryThresh;
+        stationary = acc_magFilt < stationaryThresh || acc_magFilt > stompThresh; 
         %fprintf('Stationary diff for file %i: %i\n', currentFile, sum(abs(stationary-stationary1)));
 
         % -------------------------------------------------------------------------
