@@ -18,3 +18,17 @@ test.py
 id*batch*
 4
 test_hclient1
+test_hclient1.c
+test_hclient
+test_hclient.c
+test_fclient1
+test_fclient1.c
+comm_server_gabrielle.py
+comm_server_testingfoot.py
+hand_main_attempt1.py
+Chord_function.py
+learning_multithreading.py
+output
+py2mat.py
+reading_csv.py
+server.py
