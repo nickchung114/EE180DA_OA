@@ -58,7 +58,7 @@ FOOT_MSG_LEN = STOMP_LEN + 6 # stomp + (dimensions * |{accel,gyro}|
 FOOT_MSG_BYTES = FOOT_MSG_LEN*4 # everything is 4 bytes
 MAX_NUM_SAMPLES = 256 # ie: BATCH_PTS
 MAX_FILES = 1 # flag that says whether or not to limit num of files (for testing)
-MAX_NUM_FILES = 60
+MAX_NUM_FILES = 20
 NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*MAX_NUM_FILES
 FILE_MAX = 100
 
@@ -230,7 +230,7 @@ def foot_main(my_id):
 				break
 			print 'Writing to:',writePath
                         # TODO this should be done using "with open..."
-			f = open(writePath,'wb')
+			f = open(writePath,'w+b')
 			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
 			writer = csv.writer(f)
 			counter = 0
@@ -286,7 +286,7 @@ def foot_main(my_id):
 
 if __name__ == "__main__":
         counter = 0
-        testingfoot = 0
+        testingfoot = 1
 
 	s = socket.socket()	# Create a socket object
 	s.bind((HOST,PORT))	# Bind to the port
