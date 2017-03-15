@@ -54,7 +54,7 @@ void *edgeProcessing(void *argstruct){
 				gyro_data = read_gyro(gyro,g_res);
 			}
 		}
-		turns += 1 - 2*(gyro_data.x < 0);
+		turns += 1 - 2*(gyro_data.x >= 0);
 		printf("TurnIsNow%d\n",turns);
 	}
 	return NULL;
