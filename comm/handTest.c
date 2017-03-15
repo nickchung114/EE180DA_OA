@@ -43,7 +43,7 @@ void error(const char *msg) {
 
 void *edgeProcessing(void *argstruct){
 	printf("Starting edgeProcessing...\n");
-	int i,sign;
+	int i,sign,dir;
 	gyro_data = read_gyro(gyro,g_res);
 	while(turns < 10) {
 		for(i = 0; i < 4; i++) {
@@ -53,9 +53,11 @@ void *edgeProcessing(void *argstruct){
 				usleep(MILLION/TURN_SAMP_RATE);
 				gyro_data = read_gyro(gyro,g_res);
 			}
+			if(i == 0)
+				dir = gyro_data.x >= TURN_THR ? 1 : -1;
 		}
-		turns += 1 - 2*(gyro_data.x >= 0);
-		printf("TurnIsNow%d\n",turns);
+		turns += dir;
+		printf("Turn Is Now %d\n",turns);
 	}
 	return NULL;
 }
