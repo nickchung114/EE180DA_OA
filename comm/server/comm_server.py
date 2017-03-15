@@ -58,7 +58,7 @@ FOOT_MSG_LEN = STOMP_LEN + 6 # stomp + (dimensions * |{accel,gyro}|
 FOOT_MSG_BYTES = FOOT_MSG_LEN*4 # everything is 4 bytes
 MAX_NUM_SAMPLES = 256 # ie: BATCH_PTS
 MAX_FILES = 1 # flag that says whether or not to limit num of files (for testing)
-MAX_NUM_FILES = 60
+MAX_NUM_FILES = 20
 NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*MAX_NUM_FILES
 FILE_MAX = 100
 
@@ -71,6 +71,8 @@ dir = os.path.abspath(os.path.dirname('__file__'))
 GAIT_RELPATH = '../../gait_tracking'
 GAIT_PATH = os.path.abspath(GAIT_RELPATH)
 GAIT_DATA = 'data'
+
+TESTING_FOOT = 1
 
 num_stomps = 0
 
@@ -175,13 +177,11 @@ def foot_main(my_id):
 	
 	test_counter = 0
 	
-        # TODO get this working more elegantly. for now just have matlab running at the same time for linux
-        # if sys.platform == "linux" or sys.platform == "linux2":
-        #         #p = subprocess.Popen(['./testingpy2mat.sh'])
-	# else: # windows
-        if not(sys.platform == "linux" or sys.platform == "linux2"): # windows
-		p = subprocess.Popen("testingpy2mat.bat", shell=True)
-		#testingpy2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
+        if sys.platform == "linux" or sys.platform == "linux2":
+                p = subprocess.Popen(['./py2mat.sh'])
+	else: # windows
+		p = subprocess.Popen("py2mat.bat", shell=True)
+		#py2mat.bat file should include: "matlab" -nodisplay -nosplash -nodesktop -r "run('[Path to script]\Script_Batched.m');exit;"
 
 	while True:
 		# receiving orientation (accel + gyro) and stomped
@@ -230,7 +230,7 @@ def foot_main(my_id):
 				break
 			print 'Writing to:',writePath
                         # TODO this should be done using "with open..."
-			f = open(writePath,'wb')
+			f = open(writePath,'w+b')
 			#writer = csv.writer(f, quoting=csv.QUOTE_ALL)
 			writer = csv.writer(f)
 			counter = 0
@@ -246,7 +246,7 @@ def foot_main(my_id):
 			break
 		
 		Note_old = 0
-		if testingfoot == 1: 
+		if TESTING_FOOT == 1: 
 			stomp = 1
 		if stomp:
 			print 'THERE WAS A STOMP'
@@ -267,7 +267,8 @@ def foot_main(my_id):
 				instrument = 2
 			elif currentPosition[0] > 0 and currentPosition[1] > 0:
 				instrument = 3
-			threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
+			if TESTING_FOOT != 1:
+                                threading.Thread(target=hand_main,args=(my_id,instrument,Note_old,)).start()
 	try:
 		print 'Closing:',writePath
 		f.close();
@@ -286,7 +287,6 @@ def foot_main(my_id):
 
 if __name__ == "__main__":
         counter = 0
-        testingfoot = 0
 
 	s = socket.socket()	# Create a socket object
 	s.bind((HOST,PORT))	# Bind to the port
@@ -327,12 +327,12 @@ if __name__ == "__main__":
 		        print "Invalid client ID"
 		        # TODO send back refusal to client so it can end gracefully and close this socket
                         continue
-	        if testingfoot == 1:
+	        if TESTING_FOOT == 1:
 		        break
 	        counter += 1
 
         # At this point all foot-hand clients should be paired
-        if testingfoot == 0:
+        if TESTING_FOOT == 0:
 	        if not compare_hashable_lists(fIDtoSocket.keys(),hIDtoSocket.keys()):
 		        print 'Failed to connect to all foot-hand pairs'
 		        unmatched = [x for x in fIDtoSocket.keys() if x not in hIDtoSocket.keys()]

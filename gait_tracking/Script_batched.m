@@ -7,19 +7,19 @@ addpath('ximu_matlab_library');
 % CONSTANTS
 DEBUG = 1;
 
-RT = 1; % Running in real-time
+RT = 0; % Running in real-time
 PERSISTENT = 0; % Don't delete data. Meaningful only if RT is 1
 PLOTLY = 0; % Send data to Plotly. Meaningful only if RT is 1
 
 PLOT = 1; % Plot results when done processing. Meaningful only if RT is 0
-ANIMATE = 0; % Animate results. Meaningful only if RT is 0 and PLOT is 1
+ANIMATE = 1; % Animate results. Meaningful only if RT is 0 and PLOT is 1
 
 batchSize = 256;
 sampRate = 256;
 bufSize = 100; % number of files in ring buffer btwn Python and Matlab
 initTot = 2*sampRate+1; % 2 seconds
 initSteps = 2000; % 2000 steps for initial AHRS convergence
-stationaryThresh = 0.005;
+stationaryThresh = 0.05;
 stompThresh = 3; %energy = sqrt(ax*ax + ay*ay + az*az); from Daguan's code
 msg = 0;
 numSamples = 0;
@@ -85,23 +85,24 @@ initAccZ = zeros(initTot,1);
 currentPosition = zeros(1,3);
 currentVelocity = zeros(1,3);
 
+
 % -------------------------------------------------------------------------
 % Select dataset (comment in/out)
 
-%filePath = 'split_files_256/straightLine';
+filePath = 'split_files_256/straightLine';
 %filePath = 'split_files_1024/straightLine';
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
 %filePath = 'data_2017-02-16_11-52-10/data';
-filePath = 'data/id00batch';
+%filePath = 'data/id00batch';
 
 %filePath = 'Datasets/stairsAndCorridor';
 
 %filePath = 'Datasets/spiralStairs';
 
-mat2pyFilename = '../comm/server/csv/currentPosition.csv';
-
+mat2pyFilename = 'currentPosition.csv';
+csvwrite(mat2pyFilename,currentPosition);
 % HPF Stuff
 %filtCutOffHigh = 0.001; % in Hz. Just cut out DC component
 filtCutOffHigh = 5; % needs to be higher for df1 to work...?
@@ -269,7 +270,7 @@ while (1)
 
         % Threshold detection
         %stationary1 = acc_magFilt1 < 0.05;
-        stationary = acc_magFilt < stationaryThresh || acc_magFilt > stompThresh; 
+        stationary = (acc_magFilt < stationaryThresh) | (acc_magFilt > stompThresh); 
         %fprintf('Stationary diff for file %i: %i\n', currentFile, sum(abs(stationary-stationary1)));
 
         % -------------------------------------------------------------------------
