@@ -53,13 +53,14 @@ int main(int argc, char *argv[]) {
 	set_accel_scale(accel, a_scale);	
 	a_res = calc_accel_res(a_scale);
 	
-	//TODO include gyro stuff
 	gyro = gyro_init();
 	set_gyro_scale(gyro, g_scale);
 	g_res = calc_gyro_res(g_scale);
 	gyro_offset = calc_gyro_offset(gyro, g_res);	
-	//Wait for server pings.
-	//int continue = 1;
+	
+	/*
+	 * TODO: need to multi-thread this
+	 */
 	while (1) {
 		//code for classification.
 		accel_data = read_accel(accel, a_res);
