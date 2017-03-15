@@ -3,4 +3,4 @@ foot:
 hand:
 	gcc -lmraa -lm -o handClient handClient.c LSM9DS0.c
 test:
-	gcc -lmraa -lm -o handTest handTest.c LSM9DS0.c
+	gcc -lpthread -lmraa -lm -o handTest handTest.c LSM9DS0.c

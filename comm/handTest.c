@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "LSM9DS0.h"
 
@@ -20,8 +21,15 @@
 #define NUM_NOTES	7
 #define START_ANGLE	(-110)
 #define ANGLE_RANGE	220
+#define TURN_THR	200
+#define TURN_SAMP_RATE	50
+#define MILLION		1000000
+//#define DEBUG
 
 int turns = 0;
+data_t accel_data, gyro_data;
+mraa_i2c_context gyro;
+float g_res;
 
 float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
   *curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
@@ -33,17 +41,34 @@ void error(const char *msg) {
   exit(1);
 }
 
+void *edgeProcessing(void *argstruct){
+	printf("Starting edgeProcessing...\n");
+	int i,sign;
+	gyro_data = read_gyro(gyro,g_res);
+	while(turns < 10) {
+		for(i = 0; i < 4; i++) {
+			sign = 1-2*(1&i);
+			//printf("~~~%d~~~\n",i);
+			while(sign*abs(gyro_data.x)<sign*TURN_THR){
+				usleep(MILLION/TURN_SAMP_RATE);
+				gyro_data = read_gyro(gyro,g_res);
+			}
+		}
+		turns += 1 - 2*(gyro_data.x < 0);
+		printf("TurnIsNow%d\n",turns);
+	}
+	return NULL;
+}
+
 int main(int argc, char *argv[]) {
 	//set up 9DOF
-	data_t accel_data, gyro_data, mag_data;
 	data_t gyro_offset;
-	int16_t temperature;
-	float a_res, g_res, m_res;
+	float a_res;
 	float norm; 
-	mraa_i2c_context accel, gyro, mag;
+	mraa_i2c_context accel;
 	accel_scale_t a_scale = A_SCALE_4G;
 	gyro_scale_t g_scale = G_SCALE_245DPS;
-	mag_scale_t m_scale = M_SCALE_2GS;
+
 	//Read the sensor data and print them.
 	float x_angle;
 	//float run_xyz_avg[3]={0,0,0};
@@ -63,6 +88,9 @@ int main(int argc, char *argv[]) {
 	/*
 	 * TODO: need to multi-thread this
 	 */
+	pthread_t tid;
+	pthread_create(&tid, NULL, edgeProcessing, NULL);
+
 	while (1) {
 		//code for classification.
 		accel_data = read_accel(accel, a_res);
@@ -76,11 +104,15 @@ int main(int argc, char *argv[]) {
 		x_angle = -(x_angle*180/M_PI-90) + 5.5;
 		x_angle -= x_angle > 180 ? 360 : 0;
 		if (x_angle < START_ANGLE) {
+#ifdef DEBUG
 			printf("* ");
+#endif
 			classify = 1;
 		}
 		else if (x_angle > START_ANGLE + ANGLE_RANGE) {
+#ifdef DEBUG
 			printf("* ");
+#endif
 			classify = NUM_NOTES;
 		}
 		else {
@@ -90,11 +122,16 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
+#ifdef DEBUG
 			printf("  ");
+#endif
 		}
+#ifdef DEBUG
 		printf("GX: %.3f\tGY: %.3f\tGZ: %.3f\n", gyro_data.x,gyro_data.y,gyro_data.z);
 		//printf("ACCX: %.3f\tACCY: %.3f\tACCZ: %.3f\tANGLE: %f\tCLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
-		usleep(1000000/10);
+#endif
+		printf("%.10f\t%.10f\t%.10f\n", gyro_data.x, gyro_data.y, gyro_data.z);
+		usleep(MILLION/TURN_SAMP_RATE);
 	}
 	return 0;
 }
