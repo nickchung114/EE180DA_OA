@@ -21,6 +21,8 @@
 #define START_ANGLE	(-110)
 #define ANGLE_RANGE	220
 
+int turns = 0;
+
 float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
   *curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
   return *curr_avg;
@@ -72,9 +74,7 @@ int main(int argc, char *argv[]) {
 
 		x_angle = atan2(cali_xyz[2],cali_xyz[0]);
 		x_angle = -(x_angle*180/M_PI-90) + 5.5;
-		if (x_angle > 180) {
-			x_angle -= 360;
-		}
+		x_angle -= x_angle > 180 ? 360 : 0;
 		if (x_angle < START_ANGLE || x_angle > START_ANGLE + ANGLE_RANGE) {
 			printf("out of bounds\n");
 			usleep(1000000/10);
