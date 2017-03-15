@@ -75,16 +75,22 @@ int main(int argc, char *argv[]) {
 		x_angle = atan2(cali_xyz[2],cali_xyz[0]);
 		x_angle = -(x_angle*180/M_PI-90) + 5.5;
 		x_angle -= x_angle > 180 ? 360 : 0;
-		if (x_angle < START_ANGLE || x_angle > START_ANGLE + ANGLE_RANGE) {
-			printf("out of bounds\n");
-			usleep(1000000/10);
-			continue;
+		if (x_angle < START_ANGLE) {
+			printf("* ");
+			classify = 1;
 		}
-		for(j = 1; j <= NUM_NOTES; j++) {
-			if(x_angle <= START_ANGLE + j*ANGLE_RANGE/NUM_NOTES) {
-				classify = j;
-				break;
+		else if (x_angle > START_ANGLE + ANGLE_RANGE) {
+			printf("* ");
+			classify = NUM_NOTES;
+		}
+		else {
+			for(j = 1; j <= NUM_NOTES; j++) {
+				if(x_angle < -90 + j*180/NUM_NOTES) {
+					classify = j;
+					break;
+				}
 			}
+			printf("  ");
 		}
 		printf("GX: %.3f\tGY: %.3f\tGZ: %.3f\n", gyro_data.x,gyro_data.y,gyro_data.z);
 		//printf("ACCX: %.3f\tACCY: %.3f\tACCZ: %.3f\tANGLE: %f\tCLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);

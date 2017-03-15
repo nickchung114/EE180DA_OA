@@ -163,11 +163,11 @@ int main(int argc, char *argv[]) {
 		x_angle = -(x_angle*180/M_PI-90) + 5.5;
 		x_angle -= x_angle > 180 ? 360 : 0;
 		if (x_angle < START_ANGLE) {
-			printf("out of bounds\n");
+			printf("* ");
 			classify = 1;
 		}
 		else if (x_angle > START_ANGLE + ANGLE_RANGE) {
-			printf("out of bounds\n");
+			printf("* ");
 			classify = NUM_NOTES;
 		}
 		else {
@@ -177,11 +177,14 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
+			printf("  ");
 		}
+		printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
 
 		//dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
 
 		sent = 0;
+		//dprintf(client_socket_fd,"%d",classify);
 		while (sent < 4) {
 			n = write(client_socket_fd, &classify, 4);
 
@@ -190,9 +193,6 @@ int main(int argc, char *argv[]) {
 			}
 			sent += n;
 		}
-
-		//dprintf(client_socket_fd,"%d",classify);
-		printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
 	}
 	// clean up the file descriptors
 	close(client_socket_fd);
