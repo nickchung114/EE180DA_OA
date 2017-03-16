@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "LSM9DS0.h"
 
@@ -21,9 +22,17 @@
 #define NUM_NOTES	5
 #define START_ANGLE	(-110)
 #define ANGLE_RANGE	220
+#define TURN_THR	200
+#define TURN_SAMP_RATE	50
+#define MILLION		1000000
+#define TIMEOUT		10 //seconds
+//#define DEBUG
 
 int turns = 0;
-
+data_t accel_data, gyro_data;
+float a_res, g_res;
+mraa_i2c_context accel, gyro;
+	
 float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
 	*curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
 	return *curr_avg;
@@ -34,36 +43,33 @@ void error(const char *msg) {
 	exit(1);
 }
 
+void *edgeProcessing(void *argstruct){
+	printf("Starting edgeProcessing...\n");
+	int i, sign, dir;
+	gyro_data = read_gyro(gyro,g_res);
+	clock_t start = clock();
+	
+	//while(turns < 10) {
+	while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
+		for(i = 0; i < 4; i++) {
+			sign = 1-2*(1&i); // 1 if i is even, -1 if i is odd
+			//printf("~~~%d~~~\n",i);
+			while(sign*abs(gyro_data.x)<sign*TURN_THR){
+				usleep(MILLION/TURN_SAMP_RATE);
+				gyro_data = read_gyro(gyro,g_res);
+			}
+			if(i == 0) {
+				dir = gyro_data.x >= TURN_THR ? 1 : -1;
+			}
+		}
+		turns += dir;
+		printf("Num turns: %d\n",turns);
+	}
+	printf("Exiting edgeProcessing...\n");
+	return NULL;
+}
+
 int main(int argc, char *argv[]) {
-	//set up 9DOF
-	//data_t accel_data, gyro_data, mag_data;
-	data_t accel_data, gyro_data;
-	data_t gyro_offset;
-	//int16_t temperature;
-	//float a_res, g_res, m_res;
-	float a_res, g_res;
-	float norm; 
-	mraa_i2c_context accel, gyro, mag;
-	accel_scale_t a_scale = A_SCALE_4G;
-	gyro_scale_t g_scale = G_SCALE_245DPS;
-	//mag_scale_t m_scale = M_SCALE_2GS;
-
-	//Read the sensor data and print them.
-	float x_angle;
-	//float run_xyz_avg[3]={0,0,0};
-	//int counter=1;
-	float cali_xyz[3]={0,0,0};
-	int classify = 0, j;
-
-	accel = accel_init();
-	set_accel_scale(accel, a_scale);	
-	a_res = calc_accel_res(a_scale);
-
-	gyro = gyro_init();
-	set_gyro_scale(gyro, g_scale);
-	g_res = calc_gyro_res(g_scale);
-	gyro_offset = calc_gyro_offset(gyro,g_res);
-
 	//Set up server connection
 	int client_socket_fd, portno, n, sent, tot;
 	struct sockaddr_in serv_addr;
@@ -118,6 +124,7 @@ int main(int argc, char *argv[]) {
 	// send user input to the server
 	n = write(client_socket_fd,buffer,strlen(buffer));
 	*/
+	
 	uint16_t id = 0x0000; // (client_type, client_id)
 	sent = 0;
 	while (sent < 2) {
@@ -132,22 +139,47 @@ int main(int argc, char *argv[]) {
 	}
 	printf("Sent my ID to server. Now waiting...\n");
 
-	//Wait for server pings.
-	//int continue = 1;
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	//set up 9DOF
+	data_t gyro_offset;
+	accel_scale_t a_scale = A_SCALE_4G;
+	gyro_scale_t g_scale = G_SCALE_245DPS;
+
+	//Read the sensor data and print them.
+	float x_angle;
+	//float run_xyz_avg[3]={0,0,0};
+	//int counter=1;
+	float cali_xyz[3]={0,0,0};
+	int classify = 0, j;
+
+	accel = accel_init();
+	set_accel_scale(accel, a_scale);
+	a_res = calc_accel_res(a_scale);
+
+	gyro = gyro_init();
+	set_gyro_scale(gyro, g_scale);
+	g_res = calc_gyro_res(g_scale);
+	gyro_offset = calc_gyro_offset(gyro,g_res);
+
+	pthread_t tid;
+	pthread_create(&tid, NULL, edgeProcessing, NULL);
+	
 	while (1) {
 		tot = 0;
 		while (tot < 1) {
 			n = read(client_socket_fd, &dummy, 1); // hang until received ping
 			if (n < 0) {
-			error("ERROR reading from socket\n");
+				error("ERROR reading from socket\n");
 			}
 			tot += n;
 		}
 		printf("Received ping\n");
-			
-		//code for classification.
+		
 		accel_data = read_accel(accel, a_res);
-			
+		// gyro_data = read_gyro(gyro, g_res);
+		
 		cali_xyz[0] = accel_data.x;
 		//cali_xyz[1] = accel_data.y;
 		cali_xyz[2] = accel_data.z;
@@ -163,11 +195,15 @@ int main(int argc, char *argv[]) {
 		x_angle = -(x_angle*180/M_PI-90) + 5.5;
 		x_angle -= x_angle > 180 ? 360 : 0;
 		if (x_angle < START_ANGLE) {
+#ifdef DEBUG
 			printf("* ");
+#endif
 			classify = 1;
 		}
 		else if (x_angle > START_ANGLE + ANGLE_RANGE) {
+#ifdef DEBUG
 			printf("* ");
+#endif
 			classify = NUM_NOTES;
 		}
 		else {
@@ -177,10 +213,14 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
+#ifdef DEBUG
 			printf("  ");
+#endif
 		}
+#ifdef DEBUG
 		printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
-
+		classify += NUM_NOTES;
+#endif
 		//dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
 
 		sent = 0;

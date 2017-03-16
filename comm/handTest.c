@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "LSM9DS0.h"
 
@@ -45,7 +46,10 @@ void *edgeProcessing(void *argstruct){
 	printf("Starting edgeProcessing...\n");
 	int i,sign,dir;
 	gyro_data = read_gyro(gyro,g_res);
-	while(turns < 10) {
+	clock_t start = clock():
+	
+	//while(turns < 10) {
+	while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
 		for(i = 0; i < 4; i++) {
 			sign = 1-2*(1&i);
 			//printf("~~~%d~~~\n",i);
@@ -85,7 +89,7 @@ int main(int argc, char *argv[]) {
 	gyro = gyro_init();
 	set_gyro_scale(gyro, g_scale);
 	g_res = calc_gyro_res(g_scale);
-	gyro_offset = calc_gyro_offset(gyro, g_res);	
+	gyro_offset = calc_gyro_offset(gyro, g_res);
 	
 	/*
 	 * TODO: need to multi-thread this
