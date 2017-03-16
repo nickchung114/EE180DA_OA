@@ -62,7 +62,7 @@ MAX_NUM_FILES = 60
 NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*MAX_NUM_FILES
 FILE_MAX = 100
 
-NUM_NOTES = 5
+NUM_NOTES = 7
 
 # TODO maybe want smth cleaner? not critical though
 hIDtoSocket = {}
@@ -129,14 +129,14 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
 	#pitch = data3[1]
 	pitch = struct.unpack('<i', data1)[0]
 	# PLAY SOUND
-	NoteArray = ['zero','Bassoon_C.wav','Bassoon_D.wav','Bassoon_E.wav','Bassoon_F.wav','Bassoon_G.wav',
-                'French_C.wav','French_D.wav','French_E.wav','French_F.wav','French_G.wav',
-                'Guitar_C.wav','Guitar_D.wav','Guitar_E.wav','Guitar_F.wav','Guitar_G.wav',
-                'Violin_C.wav','Violin_D.wav','Violin_E.wav','Violin_F.wav','Violin_G.wav']
-	HighNoteArray = ['zero','Bassoon_CH.wav','Bassoon_DH.wav','Bassoon_EH.wav','Bassoon_FH.wav','Bassoon_GH.wav',
-                'French_CH.wav','French_DH.wav','French_EH.wav','French_FH.wav','French_GH.wav',
-                'Guitar_CH.wav','Guitar_DH.wav','Guitar_EH.wav','Guitar_FH.wav','Guitar_GH.wav',
-                'Violin_CH.wav','Violin_DH.wav','Violin_EH.wav','Violin_FH.wav','Violin_GH.wav']
+	NoteArray = ['zero','Bassoon_C.wav','Bassoon_D.wav','Bassoon_E.wav','Bassoon_F.wav','Bassoon_G.wav','Bassoon_A.wav','Bassoon_B.wav',
+                     'French_C.wav','French_D.wav','French_E.wav','French_F.wav','French_G.wav','French_A.wav','French_B.wav',
+                     'Guitar_C.wav','Guitar_D.wav','Guitar_E.wav','Guitar_F.wav','Guitar_G.wav','Guitar_A.wav','Guitar_B.wav',
+                     'Violin_C.wav','Violin_D.wav','Violin_E.wav','Violin_F.wav','Violin_G.wav','Violin_A.wav','Violin_B.wav']
+	HighNoteArray = ['zero','Bassoon_CH.wav','Bassoon_DH.wav','Bassoon_EH.wav','Bassoon_FH.wav','Bassoon_GH.wav','Bassoon_AH.wav','Bassoon_BH.wav',
+                         'French_CH.wav','French_DH.wav','French_EH.wav','French_FH.wav','French_GH.wav','French_AH.wav','French_BH.wav',
+                         'Guitar_CH.wav','Guitar_DH.wav','Guitar_EH.wav','Guitar_FH.wav','Guitar_GH.wav','Guitar_AH.wav','Guitar_BH.wav',
+                         'Violin_CH.wav','Violin_DH.wav','Violin_EH.wav','Violin_FH.wav','Violin_GH.wav','Violin_AH.wav','Violin_BH.wav']
         high = 0
         if pitch > NUM_NOTES:
                 high = 1
