@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 #define BATCH_PTS 256 // num pts per batch (ie: pts per file)
-#define MAX_FILES 0 // flag of whether to put limit on number of files
+#define MAX_FILES 1 // flag of whether to put limit on number of files
 #define MAX_NUM_FILES 10 // only makes sense if MAX_FILES is 1
 #define MAX_BUF 128 // Maximum string size
 #define SAMP_SIZE (3*2) // num dimensions * |{accel,gyro}|

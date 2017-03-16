@@ -7,12 +7,12 @@ addpath('ximu_matlab_library');
 % CONSTANTS
 DEBUG = 1;
 
-RT = 0; % Running in real-time
+RT = 1; % Running in real-time
 PERSISTENT = 0; % Don't delete data. Meaningful only if RT is 1
-PLOTLY = 0; % Send data to Plotly. Meaningful only if RT is 1
+PLOTLY = 1; % Send data to Plotly. Meaningful only if RT is 1
 
 PLOT = 1; % Plot results when done processing. Meaningful only if RT is 0
-ANIMATE = 1; % Animate results. Meaningful only if RT is 0 and PLOT is 1
+ANIMATE = 0; % Animate results. Meaningful only if RT is 0 and PLOT is 1
 
 batchSize = 256;
 sampRate = 256;
@@ -89,13 +89,13 @@ currentVelocity = zeros(1,3);
 % -------------------------------------------------------------------------
 % Select dataset (comment in/out)
 
-filePath = 'split_files_256/straightLine';
+%filePath = 'split_files_256/straightLine';
 %filePath = 'split_files_1024/straightLine';
 %filePath = 'split_files_4096/straightLine';
 %filePath = 'Datasets/straightLine';
 
 %filePath = 'data_2017-02-16_11-52-10/data';
-%filePath = 'data/id00batch';
+filePath = 'data/id00batch';
 
 %filePath = 'Datasets/stairsAndCorridor';
 
