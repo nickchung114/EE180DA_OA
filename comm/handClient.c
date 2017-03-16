@@ -223,9 +223,9 @@ int main(int argc, char *argv[]) {
 #endif
 		}
 #ifdef DEBUG
-		printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
-		classify += NUM_NOTES*turns;
+		printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d, OCTAVE: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify, turns);
 #endif
+		classify += NUM_NOTES*turns;
 		//dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
 
 		sent = 0;
