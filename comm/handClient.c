@@ -26,7 +26,7 @@
 #define TURN_SAMP_RATE	50
 #define MILLION		1000000
 #define TIMEOUT		10 //seconds
-//#define DEBUG
+#define DEBUG
 
 int turns = 0;
 data_t accel_data, gyro_data;
@@ -63,6 +63,11 @@ void *edgeProcessing(void *argstruct){
 			}
 		}
 		turns += dir;
+
+		// clip turns
+		if (turns > 1) turns = 1;
+		if (turns < 0) turns = 0;
+		
 		printf("Num turns: %d\n",turns);
 	}
 	printf("Exiting edgeProcessing...\n");
@@ -208,7 +213,7 @@ int main(int argc, char *argv[]) {
 		}
 		else {
 			for(j = 1; j <= NUM_NOTES; j++) {
-				if(x_angle < -90 + j*180/NUM_NOTES) {
+				if(x_angle < START_ANGLE + j*ANGLE_RANGE/NUM_NOTES) {
 					classify = j;
 					break;
 				}
@@ -219,7 +224,7 @@ int main(int argc, char *argv[]) {
 		}
 #ifdef DEBUG
 		printf("ACCX: %.3f, ACCY: %.3f, ACCZ: %.3f, ANGLE: %f,CLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
-		classify += NUM_NOTES;
+		classify += NUM_NOTES*turns;
 #endif
 		//dprintf(client_socket_fd,"%f,%d\n",x_angle, classify); //Stationary XZ Angle, classification
 

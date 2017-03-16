@@ -4,6 +4,7 @@ Script.m
 Script_ourscript.m
 currentPosition.csv
 gather_server
+gather_client
 FOOTCLIENTW
 client
 footClient
