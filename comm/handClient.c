@@ -19,9 +19,9 @@
 #define ACCEL_Z_OFFSET	1 
 #define ACCEL_Z_SCALE	1 //0.997808
 
-#define NUM_NOTES	5
+#define NUM_NOTES	7
 #define START_ANGLE	(-110)
-#define ANGLE_RANGE	220
+#define ANGLE_RANGE	270
 #define TURN_THR	200
 #define TURN_SAMP_RATE	50
 #define MILLION		1000000
