@@ -62,6 +62,8 @@ MAX_NUM_FILES = 60
 NUM_ITERATIONS_FOR_TESTING = MAX_NUM_SAMPLES*MAX_NUM_FILES
 FILE_MAX = 100
 
+NUM_NOTES = 5
+
 # TODO maybe want smth cleaner? not critical though
 hIDtoSocket = {}
 fIDtoSocket = {}
@@ -131,6 +133,15 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
                 'French_C.wav','French_D.wav','French_E.wav','French_F.wav','French_G.wav',
                 'Guitar_C.wav','Guitar_D.wav','Guitar_E.wav','Guitar_F.wav','Guitar_G.wav',
                 'Violin_C.wav','Violin_D.wav','Violin_E.wav','Violin_F.wav','Violin_G.wav']
+	HighNoteArray = ['zero','Bassoon_CH.wav','Bassoon_DH.wav','Bassoon_EH.wav','Bassoon_FH.wav','Bassoon_GH.wav',
+                'French_CH.wav','French_DH.wav','French_EH.wav','French_FH.wav','French_GH.wav',
+                'Guitar_CH.wav','Guitar_DH.wav','Guitar_EH.wav','Guitar_FH.wav','Guitar_GH.wav',
+                'Violin_CH.wav','Violin_DH.wav','Violin_EH.wav','Violin_FH.wav','Violin_GH.wav']
+        high = 0
+        if pitch > NUM_NOTES:
+                high = 1
+                pitch = pitch - NUM_NOTES
+                
         Note = pitch + 5*instrument
         # Stop playing the previous note if it is a wind or instrument or violin.
         if not(sys.platform == "linux" or sys.platform == "linux2"):
@@ -141,7 +152,10 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
         else:
                 # Refer to: http://people.csail.mit.edu/hubert/pyaudio/
                 p = pyaudio.PyAudio()
-                wf = wave.open(os.path.join('wav',NoteArray[Note]), 'rb')
+                if high:
+                        wf = wave.open(os.path.join('wav', HighNoteArray[Note]), 'rb')
+                else:
+                        wf = wave.open(os.path.join('wav', NoteArray[Note]), 'rb')
                 stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                                 channels=wf.getnchannels(),
                                 rate=wf.getframerate(),
