@@ -12,70 +12,60 @@
 
 #include "LSM9DS0.h"
 
-#define ACCEL_X_OFFSET	0 //0.075707
-#define ACCEL_X_SCALE	1
-#define ACCEL_Y_OFFSET	0
-#define ACCEL_Y_SCALE	1
-#define ACCEL_Z_OFFSET	1 
-#define ACCEL_Z_SCALE	1 //0.997808
-
 #define NUM_NOTES	7
 #define START_ANGLE	(-110)
 #define ANGLE_RANGE	220
-#define TURN_THR	200
+#define TURN_THR	400.0f
 #define TURN_SAMP_RATE	50
 #define MILLION		1000000
 #define TIMEOUT		10
 #define CLOCK_TO_MS	50
-//#define DEBUG
+#define DEBUG
 
-int turns = 0;
-data_t accel_data, gyro_data;
 mraa_i2c_context gyro;
 float g_res;
 
 float update_run_avg(float *curr_avg, float num, int curr_avg_len) {
-  *curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
-  return *curr_avg;
+	*curr_avg = ((*curr_avg)*curr_avg_len + num)/(curr_avg_len+1);
+	return *curr_avg;
 }
 
 void error(const char *msg) {
-  perror(msg);
-  exit(1);
+	perror(msg);
+	exit(1);
 }
 
 void *edgeProcessing(void *argstruct){
-	printf("Starting edgeProcessing...\n");
+	int turns = 0;
 	int i,sign,dir;
-	gyro_data = read_gyro(gyro,g_res);
-	//clock_t now, start = clock(), pc = start/CLOCK_TO_S;
-	clock_t now, start = clock();
+	clock_t now, start;
 	int stoppedFlag = 0;
+	data_t gyro_data;
+	printf("Starting edgeProcessing...\n");
+	//clock_t now, start = clock(), pc = start/CLOCK_TO_S;
 
+	start = clock();
 	//while(turns < 10) {
-	while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
+	//while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
+	while (1) {
 		for(i = 0; i < 4; i++) {
+			//printf("Stage %i\n", i);
 			start = clock();
 			sign = 1-2*(1&i);
+			gyro_data = read_gyro(gyro,g_res);
 			//printf("~~~%d~~~\n",i);
-			while(sign*abs(gyro_data.x)<sign*TURN_THR){
+			while (sign*abs(gyro_data.x)<sign*TURN_THR) {
 				now = (clock() - start)/CLOCK_TO_MS;
 				if(now >= 200) {
-					printf("Waited too long\n");
+					//printf("Aborted at stage %i\n", i);
 					stoppedFlag = 1;
 					i = 4;
 					break;
 				}
-				/*
-				now = (clock() - start)/CLOCK_TO_MS;
-				if(now - pc >= 1000) {
-					printf("Clock is %d\n", now);
-					pc = now;
-				}
-				*/
 				usleep(MILLION/TURN_SAMP_RATE);
 				gyro_data = read_gyro(gyro,g_res);
 			}
+			//if (!stoppedFlag) printf("    %.1f\n", gyro_data.x);
 			if(i == 0) {
 				dir = gyro_data.x >= TURN_THR ? 1 : -1;
 			}
@@ -96,7 +86,8 @@ int main(int argc, char *argv[]) {
 	float norm; 
 	mraa_i2c_context accel;
 	accel_scale_t a_scale = A_SCALE_4G;
-	gyro_scale_t g_scale = G_SCALE_245DPS;
+	gyro_scale_t g_scale = G_SCALE_500DPS;
+	data_t accel_data, gyro_data;
 
 	//Read the sensor data and print them.
 	float x_angle;
@@ -104,6 +95,7 @@ int main(int argc, char *argv[]) {
 	//int counter=1;
 	float cali_xyz[3]={0,0,0};
 	int classify = 0, j;
+	FILE *fp = fopen("gyro.csv", "w");
 
 	accel = accel_init();
 	set_accel_scale(accel, a_scale);	
@@ -119,7 +111,7 @@ int main(int argc, char *argv[]) {
 	 */
 	pthread_t tid;
 	pthread_create(&tid, NULL, edgeProcessing, NULL);
-
+	
 	while (1) {
 		//code for classification.
 		accel_data = read_accel(accel, a_res);
@@ -133,15 +125,15 @@ int main(int argc, char *argv[]) {
 		x_angle = -(x_angle*180/M_PI-90) + 5.5;
 		x_angle -= x_angle > 180 ? 360 : 0;
 		if (x_angle < START_ANGLE) {
-#ifdef DEBUG
-			printf("* ");
-#endif
+/* #ifdef DEBUG */
+/* 			printf("* "); */
+/* #endif */
 			classify = 1;
 		}
 		else if (x_angle > START_ANGLE + ANGLE_RANGE) {
-#ifdef DEBUG
-			printf("* ");
-#endif
+/* #ifdef DEBUG */
+/* 			printf("* "); */
+/* #endif */
 			classify = NUM_NOTES;
 		}
 		else {
@@ -151,17 +143,22 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
-#ifdef DEBUG
-			printf("  ");
-#endif
+/* #ifdef DEBUG */
+/* 			printf("  "); */
+/* #endif */
 		}
 #ifdef DEBUG
-		printf("GX: %.3f\tGY: %.3f\tGZ: %.3f\n", gyro_data.x,gyro_data.y,gyro_data.z);
+		//printf("GX: %.3f\tGY: %.3f\tGZ: %.3f\n", gyro_data.x,gyro_data.y,gyro_data.z);
+		fprintf(fp, "%f,%f,%f\n",
+				gyro_data.x-gyro_offset.x,
+				gyro_data.y-gyro_offset.y,
+				gyro_data.z-gyro_offset.z);
 		//printf("ACCX: %.3f\tACCY: %.3f\tACCZ: %.3f\tANGLE: %f\tCLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
 #endif
 		//printf("%.10f\t%.10f\t%.10f\n", gyro_data.x, gyro_data.y, gyro_data.z);
 		usleep(MILLION/TURN_SAMP_RATE);
 	}
+	fclose(fp);
 	return 0;
 }
 

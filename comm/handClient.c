@@ -50,7 +50,7 @@ void *edgeProcessing(void *argstruct){
 	clock_t start = clock();
 	printf("Starting edgeProcessing...\n");
 	gyro_data = read_gyro(gyro,g_res);
-	clock_t now, start = clock();
+	clock_t now;
 	int stoppedFlag = 0;
 	
 	//while(turns < 10) {

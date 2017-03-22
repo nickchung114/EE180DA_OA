@@ -47,7 +47,7 @@ else:
 #HOST = socket.gethostname()	# Get local machine name
 HOST = ''
 # TODO make this a command-line argument
-PORT = 8000			# Reserve a port for your service
+PORT = 5000			# Reserve a port for your service
 
 # TODO need a separate thread waiting for new connections rather than waiting for EXPECTED_USERS
 EXPECTED_USERS = 1		# Number of users
@@ -142,7 +142,7 @@ def hand_main(my_id, instrument, Note_old): # will need to add a variable Note_o
                 high = 1
                 pitch = pitch - NUM_NOTES
                 
-        Note = pitch + 5*instrument
+        Note = pitch + NUM_NOTES*instrument
         # Stop playing the previous note if it is a wind or instrument or violin.
         if not(sys.platform == "linux" or sys.platform == "linux2"):
                 if Note_old < 11 or Note_old > 15:
