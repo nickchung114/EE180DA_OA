@@ -25,7 +25,9 @@
 #define TURN_THR	200
 #define TURN_SAMP_RATE	50
 #define MILLION		1000000
-#define TIMEOUT		10 //seconds
+//#define TIMEOUT	10 //seconds
+#define TIMEOUT		200 //milliseconds, 1/4 of the total action
+#define CLOCK_TO_MS	50 //emperical
 #define DEBUG
 
 int turns = 0;
@@ -48,19 +50,37 @@ void *edgeProcessing(void *argstruct){
 	clock_t start = clock();
 	printf("Starting edgeProcessing...\n");
 	gyro_data = read_gyro(gyro,g_res);
+	clock_t now, start = clock();
+	int stoppedFlag = 0;
 	
 	//while(turns < 10) {
-	while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
+	//while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
+	while(1) {
 		for(i = 0; i < 4; i++) {
+			start = clock();
 			sign = 1-2*(1&i); // 1 if i is even, -1 if i is odd
 			//printf("~~~%d~~~\n",i);
 			while(sign*abs(gyro_data.x)<sign*TURN_THR){
+				now = (clock() - start)/CLOCK_TO_MS;
+				if(now >= TIMEOUT) {
+#ifdef DEBUG					
+					printf("Waited too long\n");
+#endif
+					stoppedFlag = 1;
+					i = 4;
+					break;
+				}
 				usleep(MILLION/TURN_SAMP_RATE);
 				gyro_data = read_gyro(gyro,g_res);
 			}
 			if(i == 0) {
 				dir = gyro_data.x >= TURN_THR ? 1 : -1;
 			}
+		}
+		if(!stoppedFlag) {
+			turns += dir;
+			printf("Turn is now %d\n", turns);
+			stoppedFlag = 0;
 		}
 		turns += dir;
 
