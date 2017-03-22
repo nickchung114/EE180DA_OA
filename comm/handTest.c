@@ -25,6 +25,8 @@
 #define TURN_THR	200
 #define TURN_SAMP_RATE	50
 #define MILLION		1000000
+#define TIMEOUT		10
+#define CLOCK_TO_MS	50
 //#define DEBUG
 
 int turns = 0;
@@ -46,22 +48,43 @@ void *edgeProcessing(void *argstruct){
 	printf("Starting edgeProcessing...\n");
 	int i,sign,dir;
 	gyro_data = read_gyro(gyro,g_res);
-	clock_t start = clock():
-	
+	//clock_t now, start = clock(), pc = start/CLOCK_TO_S;
+	clock_t now, start = clock();
+	int stoppedFlag = 0;
+
 	//while(turns < 10) {
 	while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
 		for(i = 0; i < 4; i++) {
+			start = clock();
 			sign = 1-2*(1&i);
 			//printf("~~~%d~~~\n",i);
 			while(sign*abs(gyro_data.x)<sign*TURN_THR){
+				now = (clock() - start)/CLOCK_TO_MS;
+				if(now >= 200) {
+					printf("Waited too long\n");
+					stoppedFlag = 1;
+					i = 4;
+					break;
+				}
+				/*
+				now = (clock() - start)/CLOCK_TO_MS;
+				if(now - pc >= 1000) {
+					printf("Clock is %d\n", now);
+					pc = now;
+				}
+				*/
 				usleep(MILLION/TURN_SAMP_RATE);
 				gyro_data = read_gyro(gyro,g_res);
 			}
-			if(i == 0)
+			if(i == 0) {
 				dir = gyro_data.x >= TURN_THR ? 1 : -1;
+			}
 		}
-		turns += dir;
-		printf("Turn Is Now %d\n",turns);
+		if(!stoppedFlag) {
+			turns += dir;
+			printf("Turn Is Now %d\n",turns); 
+		}
+		stoppedFlag = 0;
 	}
 	return NULL;
 }
@@ -136,7 +159,7 @@ int main(int argc, char *argv[]) {
 		printf("GX: %.3f\tGY: %.3f\tGZ: %.3f\n", gyro_data.x,gyro_data.y,gyro_data.z);
 		//printf("ACCX: %.3f\tACCY: %.3f\tACCZ: %.3f\tANGLE: %f\tCLASS: %d\n",accel_data.x,accel_data.y,accel_data.z,x_angle, classify);
 #endif
-		printf("%.10f\t%.10f\t%.10f\n", gyro_data.x, gyro_data.y, gyro_data.z);
+		//printf("%.10f\t%.10f\t%.10f\n", gyro_data.x, gyro_data.y, gyro_data.z);
 		usleep(MILLION/TURN_SAMP_RATE);
 	}
 	return 0;
