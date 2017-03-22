@@ -44,10 +44,10 @@ void error(const char *msg) {
 }
 
 void *edgeProcessing(void *argstruct){
-	printf("Starting edgeProcessing...\n");
 	int i, sign, dir;
-	gyro_data = read_gyro(gyro,g_res);
 	clock_t start = clock();
+	printf("Starting edgeProcessing...\n");
+	gyro_data = read_gyro(gyro,g_res);
 	
 	//while(turns < 10) {
 	while((clock() - start)/CLOCKS_PER_SEC < TIMEOUT){
